@@ -1,0 +1,11 @@
+Model Information:
+* title:	Apple's smart watch ios
+* source:	https://sketchfab.com/3d-models/apples-smart-watch-ios-2e96b4bc89d4460fad017a184a716016
+* author:	quadrate (https://sketchfab.com/quadrate)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Apple's smart watch ios" (https://sketchfab.com/3d-models/apples-smart-watch-ios-2e96b4bc89d4460fad017a184a716016) by quadrate (https://sketchfab.com/quadrate) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -1,38 +1,206 @@
-.App {
-  text-align: center;
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+
+* {margin: 0; padding: 0; font-family: "Noto Sans", sans-serif;}
+
+
+/* Header 헤더 */
+#headerWrap {color: white; width: 100%; height: 60px; display: flex; justify-content: center; align-items: center;
+ position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+ background: rgba(25,25,25,0.8);           /* 반투명 배경 */
+  backdrop-filter: blur(12px);                 /* 블러 효과 */
+  -webkit-backdrop-filter: blur(12px);         /* 사파리 지원 */
+  border-radius: 0 0 5px 5px;                         /* 둥근 모서리 */
+  border-bottom: 1px solid rgba(255,255,255,0.15);     /* 연한 하단 테두리 */
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35);      /* 아래로 자연스럽게 블렌딩 */ 
+  }
+
+html, body, #root {
+  overscroll-behavior: none;
+  scroll-behavior: auto;
 }
 
-.App-logo {
-  height: 40vmin;
+.navi {width: 100%; margin-left: 60px; padding: 0 50px; display:flex; flex-direction: row; justify-content: space-between; align-items: center;}
+.navi h1 {margin-left: 130px; font-size: 20px; font-weight: 400; cursor: pointer; white-space: nowrap; flex: 0 0 auto;}
+.navi .menu { width: 1000px; list-style: none; display: flex; flex-direction: row; justify-content: space-between; }
+.navi .menu li {width: 80px; font-size: 12px; font-weight: 500; text-align: center; cursor: pointer;}
+.navi .search {padding-right: 200px; width: 70px; list-style: none; display: flex; flex-direction: row; justify-content: space-between;}
+.navi .search li {cursor: pointer;}
+
+/* Header menu link reset */
+.navi .menu a {
+  color: inherit;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.navi .menu a:visited { color: inherit; }
+.navi .menu a:hover,
+.navi .menu a:active,
+.navi .menu a:focus { color: inherit; text-decoration: none; outline: none; }
+
+
+#appWrap {width: 100%; background-color: black; }
+#mainvisualWrap {position: relative; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;}
+
+
+#detailWrap {width: 100%; background-color: #000;}
+.detail_3d {width: 100%; height: 300vh;}
+
+/*----------------MainTextView----------------*/
+
+#maintextviewWrap{width: 100%; height: 1500px; background-color: black; display: flex; justify-content: center; align-items: center;}
+.maintext { width: 1200px; height: 420px; color: white;  text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;}
+.maintext_title {width: 800px; padding-bottom: 0px;}
+.maintext_content {color: #4d4d4d; font-size: 18px; max-width: 800px; margin: 0 auto; line-height: 1.7;}
+
+.custom-scroll-text {color: #4d4d4d; font-size: 24px;}
+
+
+
+/*----------------ExplainView----------------*/
+#explainviewWrap {width: 100%; display: flex; flex-direction: column; align-items: center;}
+.explainview {padding-top: 100px;  position: relative; width: 100%; height:1000px ;  color: white; display: flex; flex-direction: column; justify-content: center; align-items: center;}
+.explainview .explainview_img {position: absolute; display: flex; flex-direction: column; justify-content: end;   width: 1440px; height: 720px; background-image: url(/public/images/img1.jpg); background-color: aqua; background-position: center; background-repeat: no-repeat; background-size:cover; border-radius: 30px;} 
+.explainview .explainview_img h3 {padding: 0 45px; font-size: 64px; font-weight: 600;}
+.explainview .explainview_img p {padding: 10px 48px; padding-bottom: 50px;}
+
+.battery {width: 1400px;  color: white; display: flex; flex-direction: column; text-align: left;}
+.battery .battery_title { width: 700px; }
+.battery .battery_title h4 {font-size: 56px; padding: 20px 0;}
+.battery .battery_title span img {margin-bottom: -10px;}
+.battery .battery_title p {color: #86868B; font-size: 20px; font-weight: 600;}
+.battery .battery_content {padding-top: 50px; width: 100%; height: 500px; display: flex; flex-wrap: wrap;}
+.battery .battery_content div {width: 500px; display: flex; flex-direction: column; justify-content: center;}
+.battery .battery_content div p { font-size: 20px; font-weight: 500; color: #86868B; }
+.battery .battery_content div p:nth-child(2) {font-size: 56px; font-weight: 600; color:#F56901}
+/* ensure number span inherits the same style without layout shift */
+.battery .battery_content .count { display: inline-block; min-width: 2ch; }
+
+
+/*------------Footer------------*/
+#footerWrap {width: 100%; display: flex; justify-content: center; background-color: #303030;}
+
+.footer {width: 80%; height: 200px; }
+.footer .making p:nth-child(1) {padding-top: 30px;}
+.footer .making p {padding-bottom: 10px;}
+.footer .address {padding-top: 30px; color: rgb(226, 226, 226); font-weight: 700; width: 50% ; display: flex; flex-direction: row; justify-content: space-between; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*Library*/
+/* GSAP ScrollTrigger markers visibility */
+.gsap-marker-start,
+.gsap-marker-end,
+.gsap-marker-scroller-start,
+.gsap-marker-scroller-end {
+  z-index: 999999 !important;
   pointer-events: none;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.section {
+  padding: 64px 24px;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.hero {
+  min-height: 80vh;
+  display: grid;
+  place-content: center;
+  text-align: center;
 }
 
-.App-link {
-  color: #61dafb;
+.pin-section {
+  /* ScrollTrigger에서 pin되는 영역. 100vh 크기의 캔버스를 고정 */
+  position: relative;
+  height: 100vh;
+  padding: 0;
+  z-index: 2; /* keep pinned section above neighbors */
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.three-container {
+  position: absolute;
+  inset: 0;
+  z-index: 3; /* ensure canvas sits on top while pinned */
+  /* 투명 캔버스 위에 은은한 배경 */
+  background: radial-gradient(60% 60% at 50% 50%, rgba(0, 188, 212, 0.08), transparent 70%);
+  backface-visibility: hidden;
+  will-change: transform, opacity;
 }
+
+.content {
+  min-height: 120vh;
+}
+
+
+
+
+
+.three-container {
+  position: relative;
+  width: 100%;
+  max-width: 100vw;
+  height: 100vh; /* 뷰포트 꽉 차게 */
+  margin: 0 auto; /* 중앙 정렬 */
+  display: block;
+  overflow: hidden; /* 우측 잘림 방지 */
+}
+
+.three-container canvas {
+  display: block;           /* 캔버스 여백 제거 */
+  width: 100% !important;   /* 컨테이너 가로 채우기 */
+  height: 100% !important;  /* 컨테이너 세로 채우기 */
+}
+
+/* 섹션이 실제로 화면 전체 너비를 사용하게 보장 */
+.pin-section {
+  position: relative;
+  width: 100%;
+  max-width: 100vw;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  min-height: 100vh; /* 트리거 측정 보장 */
+  contain: layout style paint; /* 레이아웃 흔들림 억제 */
+}
+
+
+
+
+
+
+
+
+
+
