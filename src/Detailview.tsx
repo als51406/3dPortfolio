@@ -72,26 +72,27 @@ function ProductModel({ onReady, scale = 1 }: { onReady?: (group: THREE.Group) =
     console.log('✅ ProductModel 초기화 완료');
   }, []); // 빈 배열: 마운트 시 한 번만
 
-  // 반응형 스케일 변경 감지 및 부드럽게 업데이트 (초기화 이후)
+  // 반응형 스케일 변경 시 로그만 출력 (타임라인이 스케일 관리)
   useLayoutEffect(() => {
-    if (!groupRef.current || !isInitializedRef.current) return;
+    if (!isInitializedRef.current) return;
     
-    console.log('🔄 스케일 변경 감지:', scale);
-    
-    // 현재 그룹 스케일을 반응형 스케일에 맞게 조정
-    const currentGroupScale = groupRef.current.scale.x / 2.5;
-    const targetGroupScale = scale;
-    
-    if (Math.abs(currentGroupScale - targetGroupScale) > 0.01) {
-      gsap.to(groupRef.current.scale, {
-        x: 2.5 * scale,
-        y: 2.5 * scale,
-        z: 2.5 * scale,
-        duration: 0.3,
-        ease: "power2.out"
-      });
-    }
+    console.log('🔄 반응형 스케일 변경:', {
+      scale,
+      expectedInitialScale: 2.5 * scale,
+      expectedFinalScale: 1 * scale,
+      note: '타임라인이 스케일 애니메이션 관리'
+    });
   }, [scale]);
+
+  // 렌더링 순서 설정 (모델을 텍스트보다 앞에)
+  useLayoutEffect(() => {
+    if (!groupRef.current) return;
+    groupRef.current.traverse((obj) => {
+      if ((obj as THREE.Mesh).isMesh) {
+        obj.renderOrder = 10; // 높은 값 = 나중에 렌더링 = 위에 표시
+      }
+    });
+  }, []);
 
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
@@ -144,6 +145,7 @@ function BillboardText({
       color={color}
       anchorX={anchorX}
       anchorY={anchorY}
+      renderOrder={-1}
       {...props}
     >
       {children}
@@ -378,6 +380,90 @@ const Detailview: React.FC = () => {
       );
     });
 
+    // 타임라인 재생성 시 모델이 이미 있으면 즉시 애니메이션 추가
+    if (modelGroupRef.current && !modelTweenAddedRef.current) {
+      console.log('🔄 타임라인 재생성 - 기존 모델 재연결');
+      const g = modelGroupRef.current;
+      const fadeInDuration = 0.3;
+      
+      // 페이드인 (이미 보이는 상태이므로 opacity 1 유지)
+      g.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh) {
+          const mesh = obj as THREE.Mesh;
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach((mat) => {
+              // 이미 보이는 상태면 opacity 유지
+              if (mat.opacity > 0) {
+                tl.set(mat, { opacity: 1 }, 0);
+              } else {
+                tl.fromTo(
+                  mat,
+                  { opacity: 0 },
+                  { opacity: 1, duration: fadeInDuration, ease: "power2.out" },
+                  0
+                );
+              }
+            });
+          } else if (mesh.material) {
+            if (mesh.material.opacity > 0) {
+              tl.set(mesh.material, { opacity: 1 }, 0);
+            } else {
+              tl.fromTo(
+                mesh.material,
+                { opacity: 0 },
+                { opacity: 1, duration: fadeInDuration, ease: "power2.out" },
+                0
+              );
+            }
+          }
+        }
+      });
+      
+      // 위치 애니메이션
+      tl.fromTo(
+        g.position,
+        { y: POS_Y_START },
+        { y: POS_Y_OVERSHOOT, duration: MODEL_DUR * POS_OVERSHOOT_PORTION, ease: "power2.out" },
+        0
+      );
+      tl.to(
+        g.position,
+        { y: POS_Y_END, duration: MODEL_DUR * (1 - POS_OVERSHOOT_PORTION), ease: "power1.inOut" },
+        MODEL_DUR * POS_OVERSHOOT_PORTION
+      );
+      
+      // 스케일 애니메이션 (반응형)
+      const startScale = 2.5 * responsive.modelScale;
+      const endScale = 1 * responsive.modelScale;
+      
+      // 현재 스케일을 유지하면서 타임라인에 추가 (스크롤 위치 고려)
+      const currentScale = g.scale.x;
+      console.log('🔧 타임라인 재생성 - 스케일 설정:', {
+        currentScale,
+        startScale,
+        endScale,
+        willUseFrom: currentScale
+      });
+      
+      tl.fromTo(
+        g.scale,
+        { x: currentScale, y: currentScale, z: currentScale },
+        { x: endScale, y: endScale, z: endScale, duration: MODEL_DUR, ease: "power2.out" },
+        0
+      );
+      
+      // 회전 애니메이션
+      tl.fromTo(
+        g.rotation,
+        { y: ROT_Y_START },
+        { y: ROT_Y_END, duration: MODEL_DUR, ease: "power1.inOut" },
+        0
+      );
+      
+      modelTweenAddedRef.current = true;
+      console.log('✅ 타임라인에 모델 애니메이션 재추가 완료');
+    }
+
   return () => {
       tlRef.current?.scrollTrigger?.kill();
       tlRef.current?.kill();
@@ -576,14 +662,27 @@ const Detailview: React.FC = () => {
               const startScale = 2.5 * responsive.modelScale;
               const endScale = 1 * responsive.modelScale;
               
+              // 타임라인의 현재 progress에 따라 초기 스케일 계산
+              const currentProgress = tlRef.current.progress();
+              const initialScale = startScale + (endScale - startScale) * currentProgress;
+              
+              console.log('🎬 스케일 애니메이션 (모델 로드 시):', { 
+                startScale, 
+                endScale, 
+                currentProgress, 
+                initialScale,
+                responsive: responsive.modelScale 
+              });
+              
+              // 현재 progress에 맞는 스케일부터 시작
+              g.scale.set(initialScale, initialScale, initialScale);
+              
               tlRef.current.fromTo(
                 g.scale,
                 { x: startScale, y: startScale, z: startScale },
                 { x: endScale, y: endScale, z: endScale, duration: MODEL_DUR, ease: "power2.out" },
                 0
               );
-              
-              console.log('🎬 스케일 애니메이션:', { startScale, endScale, responsive: responsive.modelScale });
               
               // 회전 애니메이션
               tlRef.current.fromTo(
