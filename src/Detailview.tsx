@@ -27,16 +27,17 @@ const POS_Y_END = 0;
 const POS_Y_OVERSHOOT = 1.0;
 const POS_OVERSHOOT_PORTION = 0.85;
 
-function ProductModel({ onReady }: { onReady?: (group: THREE.Group) => void }) {
+function ProductModel({ onReady, scale = 1 }: { onReady?: (group: THREE.Group) => void; scale?: number }) {
   const { scene } = useGLTF(MODEL_URL as string);
   const clonedScene = useMemo(() => scene.clone(true), [scene]);
   const groupRef = useRef<THREE.Group>(null);
+  const prevScaleRef = useRef(scale);
 
   useLayoutEffect(() => {
     if (!groupRef.current) return;
     // 초기 상태를 명확히 설정 (애니메이션 시작 전 상태)
     groupRef.current.position.y = POS_Y_START;
-    groupRef.current.scale.set(2.5, 2.5, 2.5);
+    groupRef.current.scale.set(2.5 * scale, 2.5 * scale, 2.5 * scale);
     groupRef.current.rotation.y = ROT_Y_START;
     // opacity 0으로 시작 (부드러운 페이드인 효과)
     groupRef.current.traverse((obj) => {
@@ -54,11 +55,33 @@ function ProductModel({ onReady }: { onReady?: (group: THREE.Group) => void }) {
       }
     });
     onReady?.(groupRef.current);
-  }, [onReady]);
+  }, [onReady, scale]);
+
+  // 반응형 스케일 변경 감지 및 부드럽게 업데이트
+  useLayoutEffect(() => {
+    if (!groupRef.current) return;
+    if (prevScaleRef.current === scale) return;
+    
+    prevScaleRef.current = scale;
+    
+    // 현재 그룹 스케일을 반응형 스케일에 맞게 조정
+    const currentGroupScale = groupRef.current.scale.x / 2.5;
+    const targetGroupScale = scale;
+    
+    if (Math.abs(currentGroupScale - targetGroupScale) > 0.01) {
+      gsap.to(groupRef.current.scale, {
+        x: 2.5 * scale,
+        y: 2.5 * scale,
+        z: 2.5 * scale,
+        duration: 0.3,
+        ease: "power2.out"
+      });
+    }
+  }, [scale]);
 
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
-      <primitive object={clonedScene} scale={50} />
+      <primitive object={clonedScene} scale={50 * scale} />
     </group>
   );
 }
@@ -286,18 +309,22 @@ const Detailview: React.FC = () => {
       gsap.set(rotateBadgeRef.current, { opacity: 0, scale: 0.8 });
     }
 
-    // 카메라 줌 인-아웃을 모델 상승 구간과 동기화
+    // 카메라 줌 인-아웃을 모델 상승 구간과 동기화 (반응형 거리 기준)
     if (cameraRef.current) {
+      // 반응형 카메라 거리를 기준으로 줌 인/아웃 계산
+      const baseCamZ = responsive.cameraDistance;
+      const zoomInDistance = baseCamZ - 3; // 3만큼 줌인
+      
       // 시작에 살짝 당겼다가(줌 인), 끝으로 갈수록 원위치(줌 아웃)
       tl.fromTo(
         cameraRef.current.position,
-        { z: CAM_Z_START },
-        { z: CAM_Z_IN, duration: MODEL_DUR * CAM_Z_IN_PORTION, ease: CAM_EASE_IN },
+        { z: baseCamZ },
+        { z: zoomInDistance, duration: MODEL_DUR * CAM_Z_IN_PORTION, ease: CAM_EASE_IN },
         0
       );
       tl.to(
         cameraRef.current.position,
-        { z: CAM_Z_END, duration: MODEL_DUR * (1 - CAM_Z_IN_PORTION), ease: CAM_EASE_OUT },
+        { z: baseCamZ, duration: MODEL_DUR * (1 - CAM_Z_IN_PORTION), ease: CAM_EASE_OUT },
         MODEL_DUR * CAM_Z_IN_PORTION
       );
     }
@@ -332,7 +359,7 @@ const Detailview: React.FC = () => {
       tlRef.current = null;
       modelTweenAddedRef.current = false;
     };
-  }, []);
+  }, [responsive.cameraDistance, responsive.modelScale]); // 반응형 값 변경 시 타임라인 재생성
 
   return (
     <div
@@ -445,7 +472,12 @@ const Detailview: React.FC = () => {
       </div>
 
       <Canvas
-        camera={{ fov: responsive.fov, position: [2, 1, responsive.cameraDistance] }}
+        camera={{ 
+          fov: responsive.fov, 
+          position: [2, 1, responsive.cameraDistance],
+          near: 0.1,
+          far: 1000
+        }}
         dpr={responsive.dpr}
         gl={{ 
           powerPreference: "high-performance" as any,
@@ -454,6 +486,12 @@ const Detailview: React.FC = () => {
         style={{ width: "100%", height: `${vh}px` }}
         onCreated={(state) => {
           cameraRef.current = state.camera as THREE.PerspectiveCamera;
+          // 카메라 설정 확인 및 업데이트
+          if (cameraRef.current) {
+            cameraRef.current.near = 0.1;
+            cameraRef.current.far = 1000;
+            cameraRef.current.updateProjectionMatrix();
+          }
           requestAnimationFrame(() => ScrollTrigger.refresh());
         }}
       >
@@ -462,6 +500,7 @@ const Detailview: React.FC = () => {
         <Environment preset="city" />
         <BillboardText offset={10}>Detail View</BillboardText>
           <ProductModel
+            scale={responsive.modelScale}
             onReady={(g) => {
             modelGroupRef.current = g;
             
