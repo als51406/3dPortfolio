@@ -31,15 +31,26 @@ function ProductModel({ onReady, scale = 1 }: { onReady?: (group: THREE.Group) =
   const { scene } = useGLTF(MODEL_URL as string);
   const clonedScene = useMemo(() => scene.clone(true), [scene]);
   const groupRef = useRef<THREE.Group>(null);
-  const prevScaleRef = useRef(scale);
+  const isInitializedRef = useRef(false);
 
+  // 🎯 초기화는 단 한 번만 실행 (마운트 시)
   useLayoutEffect(() => {
-    if (!groupRef.current) return;
+    if (!groupRef.current || isInitializedRef.current) return;
+    
+    console.log('🔧 ProductModel 초기화 (한 번만):', {
+      scale,
+      position: { y: POS_Y_START },
+      groupScale: `${2.5 * scale}`,
+      primitiveScale: `${50 * scale}`
+    });
+    
     // 초기 상태를 명확히 설정 (애니메이션 시작 전 상태)
     groupRef.current.position.y = POS_Y_START;
     groupRef.current.scale.set(2.5 * scale, 2.5 * scale, 2.5 * scale);
     groupRef.current.rotation.y = ROT_Y_START;
-    // opacity 0으로 시작 (부드러운 페이드인 효과)
+    groupRef.current.visible = true;
+    
+    // opacity 0으로 시작 (부드러운 페이드인 효과) - 초기화 시 한 번만
     groupRef.current.traverse((obj) => {
       if ((obj as THREE.Mesh).isMesh) {
         const mesh = obj as THREE.Mesh;
@@ -54,15 +65,18 @@ function ProductModel({ onReady, scale = 1 }: { onReady?: (group: THREE.Group) =
         }
       }
     });
-    onReady?.(groupRef.current);
-  }, [onReady, scale]);
-
-  // 반응형 스케일 변경 감지 및 부드럽게 업데이트
-  useLayoutEffect(() => {
-    if (!groupRef.current) return;
-    if (prevScaleRef.current === scale) return;
     
-    prevScaleRef.current = scale;
+    isInitializedRef.current = true;
+    onReady?.(groupRef.current);
+    
+    console.log('✅ ProductModel 초기화 완료');
+  }, []); // 빈 배열: 마운트 시 한 번만
+
+  // 반응형 스케일 변경 감지 및 부드럽게 업데이트 (초기화 이후)
+  useLayoutEffect(() => {
+    if (!groupRef.current || !isInitializedRef.current) return;
+    
+    console.log('🔄 스케일 변경 감지:', scale);
     
     // 현재 그룹 스케일을 반응형 스케일에 맞게 조정
     const currentGroupScale = groupRef.current.scale.x / 2.5;
@@ -152,6 +166,17 @@ const Detailview: React.FC = () => {
   // 반응형 설정
   const responsive = useResponsiveCanvas();
   const vh = useDynamicViewportHeight();
+  
+  // 디버깅: 반응형 설정 확인
+  useLayoutEffect(() => {
+    console.log('📱 Detailview 반응형 설정:', {
+      device: responsive.isMobile ? 'Mobile' : responsive.isTablet ? 'Tablet' : 'Desktop',
+      fov: responsive.fov,
+      cameraDistance: responsive.cameraDistance,
+      modelScale: responsive.modelScale,
+      viewport: `${responsive.width}x${responsive.height}`
+    });
+  }, [responsive.fov, responsive.cameraDistance, responsive.modelScale]);
 
   // 텍스트 3회: 아래→중앙(최대)→위로 사라짐 (스크럽 통일)
   useLayoutEffect(() => {
@@ -547,13 +572,18 @@ const Detailview: React.FC = () => {
                 MODEL_DUR * POS_OVERSHOOT_PORTION
               );
               
-              // 스케일 애니메이션
+              // 스케일 애니메이션 (반응형 스케일 적용)
+              const startScale = 2.5 * responsive.modelScale;
+              const endScale = 1 * responsive.modelScale;
+              
               tlRef.current.fromTo(
                 g.scale,
-                { x: 2.5, y: 2.5, z: 2.5 },
-                { x: 1, y: 1, z: 1, duration: MODEL_DUR, ease: "power2.out" },
+                { x: startScale, y: startScale, z: startScale },
+                { x: endScale, y: endScale, z: endScale, duration: MODEL_DUR, ease: "power2.out" },
                 0
               );
+              
+              console.log('🎬 스케일 애니메이션:', { startScale, endScale, responsive: responsive.modelScale });
               
               // 회전 애니메이션
               tlRef.current.fromTo(

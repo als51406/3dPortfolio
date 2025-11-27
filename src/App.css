@@ -57,7 +57,7 @@ html, body, #root {
 
 
 /*----------------ExplainView----------------*/
-#explainviewWrap {width: 100%; display: flex; flex-direction: column; align-items: center;}
+#explainviewWrap {width: 100%; display: flex; flex-direction: column; align-items: center; margin-bottom: 50px;}
 .explainview {padding-top: 100px;  position: relative; width: 100%; height:1000px ;  color: white; display: flex; flex-direction: column; justify-content: center; align-items: center;}
 .explainview .explainview_img {position: absolute; display: flex; flex-direction: column; justify-content: end;   width: 1440px; height: 720px; background-image: url(/public/images/img1.jpg); background-color: aqua; background-position: center; background-repeat: no-repeat; background-size:cover; border-radius: 30px;} 
 .explainview .explainview_img h3 {padding: 0 45px; font-size: 64px; font-weight: 600;}
