@@ -1,9 +1,11 @@
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback, useState, Suspense } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import MyElement3D from "./MyElement3D";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useProgress } from "@react-three/drei";
+import LoadingSpinner from "./components/LoadingSpinner";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -166,6 +168,12 @@ function CameraScrollController({ container, onProgress }: CameraScrollControlle
   return null;
 }
 
+// 로딩 진행률 표시 컴포넌트
+function LoadingProgress() {
+  const { progress } = useProgress();
+  return <LoadingSpinner progress={progress} />;
+}
+
 const Mainview: React.FC = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const introRef = useRef<HTMLDivElement>(null);
@@ -173,6 +181,7 @@ const Mainview: React.FC = () => {
   const outroTextRef = useRef<HTMLDivElement>(null);
   const outroEnterTlRef = useRef<gsap.core.Timeline | null>(null);
   const outroColorTlRef = useRef<gsap.core.Timeline | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // 중앙 인트로 문구: 스크롤이 시작되면 아래로 사라지도록 연결
   useEffect(() => {
@@ -272,6 +281,7 @@ const Mainview: React.FC = () => {
             APPLE WATCH ULTRA_2 &nbsp; INTRODUCTION BY 3D
           </h1>
         </div>
+  {isLoading && <LoadingProgress />}
   <Canvas
         camera={{
           fov: 
@@ -281,9 +291,15 @@ const Mainview: React.FC = () => {
   dpr={[1, 1.5]}
   gl={{ alpha: false, antialias: false, powerPreference: "high-performance" }}
         style={{ width: "100%", height: "100vh", backgroundColor: "black", display: "block" }}
+        onCreated={() => {
+          // Canvas가 준비되면 로딩 종료
+          setTimeout(() => setIsLoading(false), 500);
+        }}
         >
   <CameraScrollController container={sectionRef} onProgress={handleScrollProgress} />
-          <MyElement3D />
+          <Suspense fallback={null}>
+            <MyElement3D />
+          </Suspense>
         </Canvas>
         {/* 카메라 마지막 구간에서 중앙에 등장하는 텍스트 */}
         <div

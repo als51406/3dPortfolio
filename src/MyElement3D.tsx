@@ -5,14 +5,6 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useRef, useEffect, useMemo, useState, useLayoutEffect } from "react";
 import * as THREE from "three";
 
-
-// const torusGeometry = new THREE.TorusGeometry(0.4, 0.1, 32, 32);
-// const torusMaterial = new THREE.MeshStandardMaterial({
-//   color: "#9b59b6",
-//   roughness: 0.5,
-//   metalness: 0.9,
-// });
-
 // 모델 URL
 const MODEL_URL = "/models/apple_watch_ultra_2.glb";
 

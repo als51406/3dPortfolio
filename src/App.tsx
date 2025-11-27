@@ -1,17 +1,14 @@
 import React, { useEffect } from 'react';
-// cleaned unused imports
 import './App.css';
 import Header from './Header';
 import Detailview from './Detailview';
 import Mainview from './Mainview';
 import MainTextView from './MainTextView';
-// import AnimatedTextScroll from './AnimatedTextScroll';
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { useGLTF } from '@react-three/drei';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import ExplainView from './ExplainView';
-// import { ThreeCanvas } from './ThreeCanvas'; // 현재 미사용
 import Footer from './Footer';
 
 gsap.registerPlugin(ScrollTrigger);
