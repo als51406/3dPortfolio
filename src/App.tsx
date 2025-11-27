@@ -9,6 +9,7 @@ import gsap from 'gsap';
 import { useGLTF } from '@react-three/drei';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import ExplainView from './ExplainView';
+import SpecificationView from './SpecificationView';
 import Footer from './Footer';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -80,6 +81,8 @@ function App() {
     <Detailview/>
 
     <ExplainView/>
+
+    <SpecificationView/>
 
     <Footer/>
 
