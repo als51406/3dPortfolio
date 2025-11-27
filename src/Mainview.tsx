@@ -183,13 +183,17 @@ const Mainview: React.FC = () => {
   const outroColorTlRef = useRef<gsap.core.Timeline | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showLoading, setShowLoading] = useState(true);
+  const [startFadeOut, setStartFadeOut] = useState(false);
 
-  // 로딩 완료 시 페이드아웃 후 제거
+  // 로딩 완료 시 페이드아웃 시작
   useEffect(() => {
     if (!isLoading) {
+      // 즉시 페이드아웃 시작
+      setStartFadeOut(true);
+      // 페이드아웃 애니메이션 완료 후 DOM 제거
       const timer = setTimeout(() => {
         setShowLoading(false);
-      }, 600); // CSS 페이드아웃 애니메이션 시간과 맞춤
+      }, 800); // 애니메이션 시간 + 버퍼
       return () => clearTimeout(timer);
     }
   }, [isLoading]);
@@ -293,7 +297,7 @@ const Mainview: React.FC = () => {
           </h1>
         </div>
   {showLoading && (
-    <div className={!isLoading ? "loading-fade-out" : ""}>
+    <div className={startFadeOut ? "loading-fade-out" : ""}>
       <LoadingProgress />
     </div>
   )}
@@ -305,7 +309,14 @@ const Mainview: React.FC = () => {
         }}
   dpr={[1, 1.5]}
   gl={{ alpha: false, antialias: false, powerPreference: "high-performance" }}
-        style={{ width: "100%", height: "100vh", backgroundColor: "black", display: "block" }}
+        style={{ 
+          width: "100%", 
+          height: "100vh", 
+          backgroundColor: "black", 
+          display: "block",
+          opacity: isLoading ? 0 : 1,
+          transition: "opacity 0.5s ease-in"
+        }}
         >
   <CameraScrollController container={sectionRef} onProgress={handleScrollProgress} />
           <Suspense fallback={null}>
