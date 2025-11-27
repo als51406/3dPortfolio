@@ -33,8 +33,25 @@ function ProductModel({ onReady }: { onReady?: (group: THREE.Group) => void }) {
 
   useLayoutEffect(() => {
     if (!groupRef.current) return;
-  // 초기에는 비가시화(변환은 부모 타임라인에서 일괄 세팅)
-  groupRef.current.visible = false;
+    // 초기 상태를 명확히 설정 (애니메이션 시작 전 상태)
+    groupRef.current.position.y = POS_Y_START;
+    groupRef.current.scale.set(2.5, 2.5, 2.5);
+    groupRef.current.rotation.y = ROT_Y_START;
+    // opacity 0으로 시작 (부드러운 페이드인 효과)
+    groupRef.current.traverse((obj) => {
+      if ((obj as THREE.Mesh).isMesh) {
+        const mesh = obj as THREE.Mesh;
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach((mat) => {
+            mat.transparent = true;
+            mat.opacity = 0;
+          });
+        } else if (mesh.material) {
+          mesh.material.transparent = true;
+          mesh.material.opacity = 0;
+        }
+      }
+    });
     onReady?.(groupRef.current);
   }, [onReady]);
 
@@ -137,22 +154,24 @@ const Detailview: React.FC = () => {
           section.style.zIndex = self.isActive ? "999" : "auto";
         },
     onEnter: () => {
-          // 트리거 start 통과 시점에 모델 가시화 시작
-          if (modelGroupRef.current) {
-            // 바로 화면에 보이도록 얕은 위치에서 시작
-      gsap.set(modelGroupRef.current.position, { y: POS_Y_START });
-            // 스케일을 2.5배로 세팅해 타임라인과 함께 1로 수렴
-            gsap.set(modelGroupRef.current.scale, { x: 2.5, y: 2.5, z: 2.5 });
-            modelGroupRef.current.visible = true;
-          }
+          // 트리거 start 통과 시점 - 별도 처리 불필요 (초기 상태가 이미 설정됨)
+          // opacity 애니메이션은 타임라인에서 처리
         },
         onLeaveBack: () => {
-          // 되돌아갈 때는 다시 숨김
+          // 되돌아갈 때 opacity를 0으로 (부드럽게)
           if (modelGroupRef.current) {
-            modelGroupRef.current.visible = false;
-            // 다음 재진입 대비 초기값 복구
-      gsap.set(modelGroupRef.current.position, { y: POS_Y_START });
-            gsap.set(modelGroupRef.current.scale, { x: 2.5, y: 2.5, z: 2.5 });
+            modelGroupRef.current.traverse((obj) => {
+              if ((obj as THREE.Mesh).isMesh) {
+                const mesh = obj as THREE.Mesh;
+                if (Array.isArray(mesh.material)) {
+                  mesh.material.forEach((mat) => {
+                    mat.opacity = 0;
+                  });
+                } else if (mesh.material) {
+                  mesh.material.opacity = 0;
+                }
+              }
+            });
           }
           // 배지도 초기 상태로 감춤
           if (rotateBadgeRef.current) {
@@ -196,35 +215,63 @@ const Detailview: React.FC = () => {
     // 마지막에 중앙(POS_Y_END)에 정착(오버슈트 효과)
     if (modelGroupRef.current && !modelTweenAddedRef.current) {
       const g = modelGroupRef.current;
-      gsap.set(g.position, { y: POS_Y_START });
-  gsap.set(g.scale, { x: 2.5, y: 2.5, z: 2.5 });
-      // y: 시작 -> 오버슈트
+      
+      // 부드러운 페이드인 효과 (처음 0.3초 동안)
+      const fadeInDuration = 0.3;
+      g.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh) {
+          const mesh = obj as THREE.Mesh;
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach((mat) => {
+              tl.fromTo(
+                mat,
+                { opacity: 0 },
+                { opacity: 1, duration: fadeInDuration, ease: "power2.out" },
+                0
+              );
+            });
+          } else if (mesh.material) {
+            tl.fromTo(
+              mesh.material,
+              { opacity: 0 },
+              { opacity: 1, duration: fadeInDuration, ease: "power2.out" },
+              0
+            );
+          }
+        }
+      });
+
+      // y: 시작 -> 오버슈트 (부드러운 ease 적용)
       tl.fromTo(
         g.position,
         { y: POS_Y_START },
-        { y: POS_Y_OVERSHOOT, duration: MODEL_DUR * POS_OVERSHOOT_PORTION, ease: "none", immediateRender: false },
+        { y: POS_Y_OVERSHOOT, duration: MODEL_DUR * POS_OVERSHOOT_PORTION, ease: "power2.out" },
         0
       );
-      // y: 오버슈트 -> 중앙 정착
+      
+      // y: 오버슈트 -> 중앙 정착 (부드러운 감속)
       tl.to(
         g.position,
-        { y: POS_Y_END, duration: MODEL_DUR * (1 - POS_OVERSHOOT_PORTION), ease: "none" },
+        { y: POS_Y_END, duration: MODEL_DUR * (1 - POS_OVERSHOOT_PORTION), ease: "power1.inOut" },
         MODEL_DUR * POS_OVERSHOOT_PORTION
       );
-      // 스케일 2 -> 1 (상승 구간과 동기화)
+      
+      // 스케일 2.5 -> 1 (상승 구간과 동기화, 부드러운 ease)
       tl.fromTo(
         g.scale,
         { x: 2.5, y: 2.5, z: 2.5 },
-        { x: 1, y: 1, z: 1, duration: MODEL_DUR, ease: "none", immediateRender: false },
+        { x: 1, y: 1, z: 1, duration: MODEL_DUR, ease: "power2.out" },
         0
       );
+      
       // 모델 회전 효과(부드럽게 좌->우로 회전)
       tl.fromTo(
         g.rotation,
         { y: ROT_Y_START },
-        { y: ROT_Y_END, duration: MODEL_DUR, ease: ROT_EASE },
+        { y: ROT_Y_END, duration: MODEL_DUR, ease: "power1.inOut" },
         0
       );
+      
       modelTweenAddedRef.current = true;
       requestAnimationFrame(() => ScrollTrigger.refresh());
     }
@@ -409,35 +456,66 @@ const Detailview: React.FC = () => {
         <ProductModel
           onReady={(g) => {
             modelGroupRef.current = g;
-            // 초기 위치만 세팅(메인 타임라인에서 상승을 처리)
-      gsap.set(g.position, { y: POS_Y_START });
-  gsap.set(g.scale, { x: 2.5, y: 2.5, z: 2.5 });
+            
             // 타임라인이 이미 준비되어 있다면 즉시 합류
             if (tlRef.current && !modelTweenAddedRef.current) {
+              const fadeInDuration = 0.3;
+              
+              // 부드러운 페이드인 효과
+              g.traverse((obj) => {
+                if ((obj as THREE.Mesh).isMesh) {
+                  const mesh = obj as THREE.Mesh;
+                  if (Array.isArray(mesh.material)) {
+                    mesh.material.forEach((mat) => {
+                      tlRef.current!.fromTo(
+                        mat,
+                        { opacity: 0 },
+                        { opacity: 1, duration: fadeInDuration, ease: "power2.out" },
+                        0
+                      );
+                    });
+                  } else if (mesh.material) {
+                    tlRef.current!.fromTo(
+                      mesh.material,
+                      { opacity: 0 },
+                      { opacity: 1, duration: fadeInDuration, ease: "power2.out" },
+                      0
+                    );
+                  }
+                }
+              });
+              
+              // y: 시작 -> 오버슈트
               tlRef.current.fromTo(
                 g.position,
                 { y: POS_Y_START },
-                { y: POS_Y_OVERSHOOT, duration: MODEL_DUR * POS_OVERSHOOT_PORTION, ease: "none", immediateRender: false },
+                { y: POS_Y_OVERSHOOT, duration: MODEL_DUR * POS_OVERSHOOT_PORTION, ease: "power2.out" },
                 0
               );
+              
+              // y: 오버슈트 -> 중앙 정착
               tlRef.current.to(
                 g.position,
-                { y: POS_Y_END, duration: MODEL_DUR * (1 - POS_OVERSHOOT_PORTION), ease: "none" },
+                { y: POS_Y_END, duration: MODEL_DUR * (1 - POS_OVERSHOOT_PORTION), ease: "power1.inOut" },
                 MODEL_DUR * POS_OVERSHOOT_PORTION
               );
+              
+              // 스케일 애니메이션
               tlRef.current.fromTo(
                 g.scale,
                 { x: 2.5, y: 2.5, z: 2.5 },
-                { x: 1, y: 1, z: 1, duration: MODEL_DUR, ease: "none", immediateRender: false },
+                { x: 1, y: 1, z: 1, duration: MODEL_DUR, ease: "power2.out" },
                 0
               );
-              // 회전까지 보장
+              
+              // 회전 애니메이션
               tlRef.current.fromTo(
                 g.rotation,
                 { y: ROT_Y_START },
-                { y: ROT_Y_END, duration: MODEL_DUR, ease: ROT_EASE },
+                { y: ROT_Y_END, duration: MODEL_DUR, ease: "power1.inOut" },
                 0
               );
+              
               modelTweenAddedRef.current = true;
             }
             requestAnimationFrame(() => ScrollTrigger.refresh());

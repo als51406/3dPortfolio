@@ -13,9 +13,23 @@ import * as THREE from "three";
 //   metalness: 0.9,
 // });
 
+// 모델 URL
+const MODEL_URL = "/models/apple_watch_ultra_2.glb";
+
+// 개발 환경에서 GLTFLoader 캐시 강제 초기화
+if (process.env.NODE_ENV === 'development') {
+  try {
+    useGLTF.clear(MODEL_URL);
+  } catch (e) {
+    console.log('캐시 클리어 무시:', e);
+  }
+}
+
+// 모델 사전 로드 (메인뷰용)
+useGLTF.preload(MODEL_URL);
 
 function MyElement3D() {
-    const model1 = useGLTF("/models/apple_watch_ultra_2.glb");
+    const model1 = useGLTF(MODEL_URL);
     // Note: model2와 model3는 현재 사용되지 않지만, 향후 확장을 위해 주석 처리
     // const model2 = useGLTF("/models/samsung__galaxy__watch_5.glb");
     // const model3 = useGLTF("/models/samsung__galaxy__watch_5.glb");
@@ -46,7 +60,7 @@ function MyElement3D() {
 
       <pointLight
         ref={light}
-        color="#f337e3ff"
+        color="#ffffff"
         intensity={7}
         position={[0, 5, 0]}
         distance={10} // 빛의 최대 거리(퍼짐 범위)

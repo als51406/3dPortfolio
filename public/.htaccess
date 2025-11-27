@@ -1,0 +1,13 @@
+# 캐시 완전 비활성화 (개발 환경용)
+<IfModule mod_headers.c>
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+</IfModule>
+
+# GLB 모델 파일 캐시 비활성화
+<FilesMatch "\.(glb|gltf)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+</FilesMatch>
