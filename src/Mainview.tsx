@@ -182,40 +182,53 @@ const Mainview: React.FC = () => {
   const outroTextRef = useRef<HTMLDivElement>(null);
   const outroEnterTlRef = useRef<gsap.core.Timeline | null>(null);
   const outroColorTlRef = useRef<gsap.core.Timeline | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showLoading, setShowLoading] = useState(true);
-  const [startFadeOut, setStartFadeOut] = useState(false);
+  // 로딩 관련 state 제거 (App.tsx에서 처리)
   
   // 반응형 설정
   const responsive = useResponsiveCanvas();
   const vh = useDynamicViewportHeight();
 
-  // 로딩 완료 시 페이드아웃 시작
+  // 컴포넌트 마운트 시 섹션 페이드인
   useEffect(() => {
-    if (!isLoading) {
-      // 즉시 페이드아웃 시작
-      setStartFadeOut(true);
-      // 페이드아웃 애니메이션 완료 후 DOM 제거
-      const timer = setTimeout(() => {
-        setShowLoading(false);
-      }, 800); // 애니메이션 시간 + 버퍼
-      return () => clearTimeout(timer);
+    if (sectionRef.current) {
+      // 섹션 전체를 페이드인
+      gsap.fromTo(sectionRef.current, 
+        { opacity: 0 },
+        { 
+          opacity: 1, 
+          duration: 1.0, 
+          delay: 0.2,
+          ease: "power2.out" 
+        }
+      );
     }
-  }, [isLoading]);
+  }, []);
 
   // 중앙 인트로 문구: 초기 상태 설정 및 스크롤 애니메이션
   useEffect(() => {
     if (!introRef.current) return;
-    // 초기 위치 설정 (opacity는 CSS transition이 처리)
-    gsap.set(introRef.current, { yPercent: 0 });
+    // 초기 상태를 명확히 설정
+    gsap.set(introRef.current, { 
+      yPercent: 0, 
+      opacity: 1, // 기본적으로 보임 (섹션 페이드인으로 제어됨)
+      clearProps: "transition" // CSS transition 제거
+    });
+    
+    // 스크롤 애니메이션 타임라인: yPercent와 opacity를 함께 제어
     const introTl = gsap
       .timeline({ paused: true })
-      .to(introRef.current, {
-        yPercent: 130,
-        opacity: 0,
-        duration: 1,
-        ease: "power2.in",
-      });
+      .fromTo(introRef.current, 
+        { 
+          yPercent: 0, 
+          opacity: 1 // 시작 상태: 보임
+        },
+        {
+          yPercent: 130,
+          opacity: 0, // 끝 상태: 사라짐
+          duration: 1,
+          ease: "power2.in",
+        }
+      );
     introTlRef.current = introTl;
 
     return () => {
@@ -226,8 +239,21 @@ const Mainview: React.FC = () => {
 
   // CameraScrollController에서 전달하는 원시 진행도로 인트로 타임라인을 구동
   const handleScrollProgress = useCallback((raw: number) => {
-    const introProgress = Math.min(1, raw / INTRO_PORTION);
-    introTlRef.current?.progress(introProgress);
+    // INTRO 구간 (0 ~ INTRO_PORTION): 인트로 텍스트 페이드아웃
+    const introProgress = Math.min(1, Math.max(0, raw / INTRO_PORTION));
+    
+    if (introTlRef.current) {
+      // progress() 메서드는 양방향 스크러빙을 자동으로 처리
+      // raw가 줄어들면 introProgress도 줄어들어 자동으로 역재생됨
+      introTlRef.current.progress(introProgress);
+      
+      if (process.env.NODE_ENV === 'development') {
+        // 디버깅용 (필요시)
+        if (raw < 0.01 || (raw > 0.14 && raw < 0.16)) {
+          console.log('📍 Intro 진행도:', { raw: raw.toFixed(3), introProgress: introProgress.toFixed(3) });
+        }
+      }
+    }
 
     // 카메라 종료 이후 꼬리 구간(raw: camEnd..1)을 0..1로 매핑
     const camEnd = INTRO_PORTION + CAMERA_PORTION;
@@ -273,7 +299,21 @@ const Mainview: React.FC = () => {
 
   return (
     <div id="mainvisualWrap" style={{ position: "relative", width: "100%", overflowX: "hidden" }}>
-      <section ref={sectionRef} style={{ position: "relative", width: "100%", height: "100vh", overflow: "hidden", margin: 0, padding: 0, zIndex: 10, backgroundColor: "black", overscrollBehavior: "contain" }}>
+      <section 
+        ref={sectionRef} 
+        style={{ 
+          position: "relative", 
+          width: "100%", 
+          height: "100vh", 
+          overflow: "hidden", 
+          margin: 0, 
+          padding: 0, 
+          zIndex: 10, 
+          backgroundColor: "black", 
+          overscrollBehavior: "contain",
+          opacity: 0, // 초기 상태: 투명 (GSAP이 페이드인 처리)
+        }}
+      >
         {/* 중앙 인트로 오버레이 */}
         <div
           ref={introRef}
@@ -285,9 +325,7 @@ const Mainview: React.FC = () => {
             justifyContent: "center",
             pointerEvents: "none",
             zIndex: 5,
-            opacity: isLoading ? 0 : 1,
-            transition: "opacity 0.8s ease-in-out 0.4s", // 0.4초 지연 후 0.8초 동안 페이드인
-            willChange: "opacity",
+            willChange: "transform, opacity",
           }}
         >
           <h1
@@ -305,11 +343,6 @@ const Mainview: React.FC = () => {
             {responsive.isMobile ? "APPLE WATCH ULTRA_2" : "APPLE WATCH ULTRA_2 \u00A0 INTRODUCTION BY 3D"}
           </h1>
         </div>
-  {showLoading && (
-    <div className={startFadeOut ? "loading-fade-out" : ""}>
-      <LoadingProgress />
-    </div>
-  )}
   <Canvas
         camera={{
           fov: responsive.fov,
@@ -326,15 +359,12 @@ const Mainview: React.FC = () => {
           height: `${vh}px`, // 동적 뷰포트 높이
           backgroundColor: "black", 
           display: "block",
-          opacity: isLoading ? 0 : 1,
-          transition: "opacity 0.6s ease-in 0.2s",
-          willChange: "opacity"
+          // Canvas의 개별 opacity 제어 제거 (section 전체로 통합)
         }}
         >
   <CameraScrollController container={sectionRef} onProgress={handleScrollProgress} />
           <Suspense fallback={null}>
             <MyElement3D 
-              onModelReady={() => setIsLoading(false)} 
               scale={responsive.modelScale}
             />
           </Suspense>
@@ -384,7 +414,7 @@ Apple Watch Ultra 2는 극한의 환경을 위해 제작되었습니다. 검은�
           </p>
         </div>
       </section>
-      <div
+      {/* <div
         style={{
           position: "absolute",
           bottom: 150,
@@ -397,7 +427,7 @@ Apple Watch Ultra 2는 극한의 환경을 위해 제작되었습니다. 검은�
       >
         <h2>Apple Watch Ultra 2</h2>
         <p>LTPO3 OLED 상시표시형 Retina 디스플레이</p>
-      </div>
+      </div> */}
     </div>
   );
 };

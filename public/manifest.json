@@ -1,15 +1,41 @@
 {
-  "short_name": "3D Portfolio",
-  "name": "Apple Watch Ultra 2 - 3D Portfolio",
+  "short_name": "Watch Ultra 2",
+  "name": "Apple Watch Ultra 2 - 3D Interactive Portfolio",
+  "description": "극강의 내구성과 최고의 활력. Apple Watch Ultra 2를 360° 3D로 경험하세요.",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "favicon_watch/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon_watch/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon_watch/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon_watch/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "favicon_watch/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
   "start_url": ".",
   "display": "standalone",
+  "orientation": "portrait",
   "theme_color": "#000000",
-  "background_color": "#000000"
+  "background_color": "#000000",
+  "categories": ["portfolio", "technology", "3d"],
+  "lang": "ko-KR"
 }

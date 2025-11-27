@@ -9,24 +9,14 @@ import * as THREE from "three";
 const MODEL_URL = "/models/apple_watch_ultra_2.glb";
 
 interface MyElement3DProps {
-  onModelReady?: () => void;
   scale?: number; // 반응형 스케일
 }
 
-function MyElement3D({ onModelReady, scale = 1 }: MyElement3DProps) {
+function MyElement3D({ scale = 1 }: MyElement3DProps) {
     const [isReady, setIsReady] = useState(false);
     const model1 = useGLTF(MODEL_URL);
     const light = useRef<THREE.PointLight>(null);
     const { invalidate } = useThree();
-    
-    // 개발 환경에서 언마운트 시 캐시 클리어
-    useEffect(() => {
-      return () => {
-        if (process.env.NODE_ENV === 'development') {
-          useGLTF.clear(MODEL_URL);
-        }
-      };
-    }, []);
     
     // 모델 복제를 한 번만 수행 (메모리 최적화)
     const clonedScenes = useMemo(() => {
@@ -37,24 +27,16 @@ function MyElement3D({ onModelReady, scale = 1 }: MyElement3DProps) {
       return [];
     }, [model1]);
     
-    // 레이아웃 준비 후 렌더링 활성화 + 강제 리렌더 (이중 안전장치)
+    // 레이아웃 준비 후 렌더링 활성화 (단순하고 안정적인 로직)
     useLayoutEffect(() => {
       if (clonedScenes.length > 0 && !isReady) {
         setIsReady(true);
-        requestAnimationFrame(() => {
-          invalidate();
-          requestAnimationFrame(() => {
-            invalidate();
-            // 모델이 완전히 렌더링된 후 콜백 호출 (안정화 대기)
-            setTimeout(() => {
-              requestAnimationFrame(() => {
-                onModelReady?.();
-              });
-            }, 100); // 100ms 추가 대기로 렌더링 안정화
-          });
-        });
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔄 MyElement3D: 8개 모델 클론 완료, 렌더링 준비');
+        }
       }
-    }, [clonedScenes, isReady, invalidate, onModelReady]);
+    }, [clonedScenes, isReady]);
 
   useFrame((state) => {
     const time = state.clock.getElapsedTime();
