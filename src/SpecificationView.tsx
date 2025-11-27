@@ -1,9 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import React from 'react';
 import './SpecificationView.css';
-
-gsap.registerPlugin(ScrollTrigger);
 
 interface SpecItem {
   category: string;
@@ -76,92 +72,18 @@ const specifications: SpecItem[] = [
 ];
 
 const SpecificationView: React.FC = () => {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const tableRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!sectionRef.current || !titleRef.current || !tableRef.current) return;
-
-    // 타이틀 애니메이션
-    gsap.fromTo(
-      titleRef.current,
-      { opacity: 0, y: 50 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: titleRef.current,
-          start: 'top 80%',
-          once: true,
-        },
-      }
-    );
-
-    // 테이블 행 순차 애니메이션
-    const rows = tableRef.current.querySelectorAll('.spec-row');
-    rows.forEach((row, index) => {
-      gsap.fromTo(
-        row,
-        { opacity: 0, x: -50 },
-        {
-          opacity: 1,
-          x: 0,
-          duration: 0.6,
-          delay: index * 0.1,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: row,
-            start: 'top 90%',
-            once: true,
-          },
-        }
-      );
-    });
-
-    // 헤더 강조 애니메이션
-    const highlights = tableRef.current.querySelectorAll('.highlight');
-    highlights.forEach((highlight) => {
-      gsap.fromTo(
-        highlight,
-        { scale: 1, backgroundColor: 'transparent' },
-        {
-          scale: 1.05,
-          backgroundColor: 'rgba(79, 9, 243, 0.1)',
-          duration: 0.3,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: highlight,
-            start: 'top 80%',
-            once: true,
-          },
-        }
-      );
-    });
-
-    return () => {
-      ScrollTrigger.getAll().forEach((trigger) => {
-        if (trigger.vars.trigger && sectionRef.current?.contains(trigger.vars.trigger as Node)) {
-          trigger.kill();
-        }
-      });
-    };
-  }, []);
-
   return (
-    <div id="specificationViewWrap" ref={sectionRef}>
+    <div id="specificationViewWrap">
       <section className="specification-view">
         <div className="spec-container">
-          <h2 ref={titleRef} className="spec-title">
-            모델 비교
+          <h2 className="spec-title">
+            SPECIFICATION
           </h2>
           <p className="spec-subtitle">
-            Apple Watch Ultra 2가 다른 모델과 어떻게 다른지 확인하세요
+            세대별 모델 비교
           </p>
 
-          <div className="spec-table" ref={tableRef}>
+          <div className="spec-table">
             {/* 테이블 헤더 */}
             <div className="spec-row spec-header">
               <div className="spec-cell category-cell">사양</div>

@@ -1,6 +1,6 @@
 #specificationViewWrap {
   width: 100%;
-  background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%);
+  background: #000000;
   padding: 100px 0;
   position: relative;
   overflow: hidden;
@@ -38,31 +38,25 @@
 /* 테이블 */
 .spec-table {
   width: 100%;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 16px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0;
   overflow: hidden;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .spec-row {
   display: grid;
   grid-template-columns: 200px repeat(3, 1fr);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  transition: background-color 0.3s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .spec-row:last-child {
   border-bottom: none;
 }
 
-.spec-row:hover:not(.spec-header) {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
 /* 헤더 */
 .spec-header {
-  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
+  background: #000000;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -87,10 +81,10 @@
 }
 
 .category-cell {
-  background: rgba(79, 9, 243, 0.05);
+  background: transparent;
   font-weight: 600;
   color: #ffffff;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .model-cell {
@@ -106,37 +100,24 @@
 
 /* 하이라이트 (Ultra 2) */
 .highlight {
-  background: rgba(79, 9, 243, 0.08);
-  border-left: 3px solid #4f09f3;
+  background: transparent;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
   position: relative;
-}
-
-.highlight::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #4f09f3, transparent);
 }
 
 /* 모델 뱃지 */
 .model-badge {
   display: inline-block;
   padding: 4px 12px;
-  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
   text-transform: uppercase;
-}
-
-.model-badge.ultra2 {
-  background: linear-gradient(135deg, #4f09f3, #9b59b6);
+  background: transparent;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(79, 9, 243, 0.4);
 }
 
 /* 모델 이름 */
@@ -156,35 +137,35 @@
 
 .spec-btn {
   padding: 16px 40px;
-  border-radius: 30px;
+  border-radius: 0;
   font-size: 16px;
   font-weight: 600;
-  border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
   letter-spacing: 0.3px;
+  transition: all 0.3s ease;
 }
 
 .spec-btn.primary {
-  background: linear-gradient(135deg, #4f09f3, #9b59b6);
-  color: #ffffff;
-  box-shadow: 0 8px 24px rgba(79, 9, 243, 0.3);
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #ffffff;
 }
 
 .spec-btn.primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(79, 9, 243, 0.5);
+  background: #000000;
+  color: #ffffff;
 }
 
 .spec-btn.secondary {
   background: transparent;
   color: #ffffff;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .spec-btn.secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
 }
 
 /* 반응형 */
@@ -240,10 +221,10 @@
   }
 
   .spec-row:not(.spec-header) {
-    background: rgba(255, 255, 255, 0.05);
+    background: transparent;
     margin-bottom: 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     overflow: hidden;
   }
 
@@ -258,7 +239,7 @@
   }
 
   .category-cell {
-    background: rgba(79, 9, 243, 0.15);
+    background: transparent;
     font-size: 16px;
     text-align: center;
     align-items: center;
@@ -285,19 +266,4 @@
   }
 }
 
-/* 애니메이션 */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.spec-row {
-  animation: fadeInUp 0.6s ease-out forwards;
-  opacity: 0;
-}
+/* 애니메이션 제거 */
