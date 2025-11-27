@@ -31,10 +31,6 @@ function App() {
     let checkCount = 0;
     const maxChecks = 50; // 최대 5초 (100ms * 50)
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log('⏳ 모델 preload 완료 대기 중...');
-    }
-    
     const checkModelLoaded = () => {
       try {
         // useGLTF 캐시에 모델이 있는지 확인
@@ -50,9 +46,6 @@ function App() {
             // 페이드아웃 애니메이션 후 상태 변경
             setTimeout(() => {
               setModelPreloaded(true);
-              if (process.env.NODE_ENV === 'development') {
-                console.log(`✅ 모델 캐시 확인됨 (${checkCount * 100}ms) - 렌더링 시작`);
-              }
             }, 800); // 페이드아웃 시간
           }
           if (loadCheckIntervalRef.current) {

@@ -42,15 +42,6 @@ function ProductModel({ onReady, scale = 1 }: { onReady?: (group: THREE.Group) =
   useLayoutEffect(() => {
     if (!groupRef.current || isInitializedRef.current) return;
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔧 ProductModel 초기화 (한 번만):', {
-        scale,
-        position: { y: POS_Y_START },
-        groupScale: `${2.5 * scale}`,
-        primitiveScale: `${50 * scale}`
-      });
-    }
-    
     // 초기 상태를 명확히 설정 (애니메이션 시작 전 상태)
     groupRef.current.position.y = POS_Y_START;
     groupRef.current.scale.set(2.5 * scale, 2.5 * scale, 2.5 * scale);
@@ -75,25 +66,7 @@ function ProductModel({ onReady, scale = 1 }: { onReady?: (group: THREE.Group) =
     
     isInitializedRef.current = true;
     onReady?.(groupRef.current);
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✅ ProductModel 초기화 완료');
-    }
   }, []); // 빈 배열: 마운트 시 한 번만
-
-  // 반응형 스케일 변경 시 로그만 출력 (타임라인이 스케일 관리)
-  useLayoutEffect(() => {
-    if (!isInitializedRef.current) return;
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔄 반응형 스케일 변경:', {
-        scale,
-        expectedInitialScale: 2.5 * scale,
-        expectedFinalScale: 1 * scale,
-        note: '타임라인이 스케일 애니메이션 관리'
-      });
-    }
-  }, [scale]);
 
   // 렌더링 순서 설정 (모델을 텍스트보다 앞에)
   useLayoutEffect(() => {
@@ -184,19 +157,6 @@ const Detailview: React.FC = () => {
   // 반응형 설정
   const responsive = useResponsiveCanvas();
   const vh = useDynamicViewportHeight();
-  
-  // 디버깅: 반응형 설정 확인 (개발 환경에서만)
-  useLayoutEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('📱 Detailview 반응형 설정:', {
-        device: responsive.isMobile ? 'Mobile' : responsive.isTablet ? 'Tablet' : 'Desktop',
-        fov: responsive.fov,
-        cameraDistance: responsive.cameraDistance,
-        modelScale: responsive.modelScale,
-        viewport: `${responsive.width}x${responsive.height}`
-      });
-    }
-  }, [responsive.fov, responsive.cameraDistance, responsive.modelScale]);
 
   // 텍스트 3회: 아래→중앙(최대)→위로 사라짐 (스크럽 통일)
   useLayoutEffect(() => {
@@ -358,7 +318,7 @@ const Detailview: React.FC = () => {
     if (cameraRef.current) {
       // 반응형 카메라 거리를 기준으로 줌 인/아웃 계산
       const baseCamZ = responsive.cameraDistance;
-      const zoomInDistance = baseCamZ - 3; // 3만큼 줌인
+      const zoomInDistance = baseCamZ - 1.5; // 1.5만큼 줌인 (적절한 크기)
       
       // 시작에 살짝 당겼다가(줌 인), 끝으로 갈수록 원위치(줌 아웃)
       tl.fromTo(
@@ -400,9 +360,6 @@ const Detailview: React.FC = () => {
 
     // 타임라인 재생성 시 모델이 이미 있으면 즉시 애니메이션 추가
     if (modelGroupRef.current && !modelTweenAddedRef.current) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔄 타임라인 재생성 - 기존 모델 재연결');
-      }
       const g = modelGroupRef.current;
       const fadeInDuration = 0.3;
       
@@ -458,14 +415,6 @@ const Detailview: React.FC = () => {
       
       // 현재 스케일을 유지하면서 타임라인에 추가 (스크롤 위치 고려)
       const currentScale = g.scale.x;
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔧 타임라인 재생성 - 스케일 설정:', {
-          currentScale,
-          startScale,
-          endScale,
-          willUseFrom: currentScale
-        });
-      }
       
       tl.fromTo(
         g.scale,
@@ -483,9 +432,6 @@ const Detailview: React.FC = () => {
       );
       
       modelTweenAddedRef.current = true;
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ 타임라인에 모델 애니메이션 재추가 완료');
-      }
     }
 
   return () => {
@@ -689,16 +635,6 @@ const Detailview: React.FC = () => {
               // 타임라인의 현재 progress에 따라 초기 스케일 계산
               const currentProgress = tlRef.current.progress();
               const initialScale = startScale + (endScale - startScale) * currentProgress;
-              
-              if (process.env.NODE_ENV === 'development') {
-                console.log('🎬 스케일 애니메이션 (모델 로드 시):', { 
-                  startScale, 
-                  endScale, 
-                  currentProgress, 
-                  initialScale,
-                  responsive: responsive.modelScale 
-                });
-              }
               
               // 현재 progress에 맞는 스케일부터 시작
               g.scale.set(initialScale, initialScale, initialScale);

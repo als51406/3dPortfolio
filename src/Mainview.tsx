@@ -246,13 +246,6 @@ const Mainview: React.FC = () => {
       // progress() 메서드는 양방향 스크러빙을 자동으로 처리
       // raw가 줄어들면 introProgress도 줄어들어 자동으로 역재생됨
       introTlRef.current.progress(introProgress);
-      
-      if (process.env.NODE_ENV === 'development') {
-        // 디버깅용 (필요시)
-        if (raw < 0.01 || (raw > 0.14 && raw < 0.16)) {
-          console.log('📍 Intro 진행도:', { raw: raw.toFixed(3), introProgress: introProgress.toFixed(3) });
-        }
-      }
     }
 
     // 카메라 종료 이후 꼬리 구간(raw: camEnd..1)을 0..1로 매핑

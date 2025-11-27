@@ -31,10 +31,6 @@ function MyElement3D({ scale = 1 }: MyElement3DProps) {
     useLayoutEffect(() => {
       if (clonedScenes.length > 0 && !isReady) {
         setIsReady(true);
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🔄 MyElement3D: 8개 모델 클론 완료, 렌더링 준비');
-        }
       }
     }, [clonedScenes, isReady]);
 
