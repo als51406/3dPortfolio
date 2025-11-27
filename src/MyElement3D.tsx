@@ -44,10 +44,12 @@ function MyElement3D({ onModelReady }: MyElement3DProps) {
           invalidate();
           requestAnimationFrame(() => {
             invalidate();
-            // 모델이 완전히 렌더링된 후 콜백 호출
-            requestAnimationFrame(() => {
-              onModelReady?.();
-            });
+            // 모델이 완전히 렌더링된 후 콜백 호출 (안정화 대기)
+            setTimeout(() => {
+              requestAnimationFrame(() => {
+                onModelReady?.();
+              });
+            }, 100); // 100ms 추가 대기로 렌더링 안정화
           });
         });
       }

@@ -280,6 +280,8 @@ const Mainview: React.FC = () => {
             justifyContent: "center",
             pointerEvents: "none",
             zIndex: 5,
+            opacity: isLoading ? 0 : 1,
+            transition: "opacity 0.5s ease-in 0.3s", // 0.3초 지연 후 페이드인
           }}
         >
           <h1
@@ -315,7 +317,8 @@ const Mainview: React.FC = () => {
           backgroundColor: "black", 
           display: "block",
           opacity: isLoading ? 0 : 1,
-          transition: "opacity 0.5s ease-in"
+          transition: "opacity 0.6s ease-in 0.2s", // 0.2초 지연 후 페이드인
+          willChange: "opacity"
         }}
         >
   <CameraScrollController container={sectionRef} onProgress={handleScrollProgress} />
