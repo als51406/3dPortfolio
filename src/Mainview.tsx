@@ -182,6 +182,17 @@ const Mainview: React.FC = () => {
   const outroEnterTlRef = useRef<gsap.core.Timeline | null>(null);
   const outroColorTlRef = useRef<gsap.core.Timeline | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showLoading, setShowLoading] = useState(true);
+
+  // 로딩 완료 시 페이드아웃 후 제거
+  useEffect(() => {
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        setShowLoading(false);
+      }, 600); // CSS 페이드아웃 애니메이션 시간과 맞춤
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
 
   // 중앙 인트로 문구: 스크롤이 시작되면 아래로 사라지도록 연결
   useEffect(() => {
@@ -281,7 +292,11 @@ const Mainview: React.FC = () => {
             APPLE WATCH ULTRA_2 &nbsp; INTRODUCTION BY 3D
           </h1>
         </div>
-  {isLoading && <LoadingProgress />}
+  {showLoading && (
+    <div className={!isLoading ? "loading-fade-out" : ""}>
+      <LoadingProgress />
+    </div>
+  )}
   <Canvas
         camera={{
           fov: 
@@ -291,14 +306,10 @@ const Mainview: React.FC = () => {
   dpr={[1, 1.5]}
   gl={{ alpha: false, antialias: false, powerPreference: "high-performance" }}
         style={{ width: "100%", height: "100vh", backgroundColor: "black", display: "block" }}
-        onCreated={() => {
-          // Canvas가 준비되면 로딩 종료
-          setTimeout(() => setIsLoading(false), 500);
-        }}
         >
   <CameraScrollController container={sectionRef} onProgress={handleScrollProgress} />
           <Suspense fallback={null}>
-            <MyElement3D />
+            <MyElement3D onModelReady={() => setIsLoading(false)} />
           </Suspense>
         </Canvas>
         {/* 카메라 마지막 구간에서 중앙에 등장하는 텍스트 */}

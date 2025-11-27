@@ -8,7 +8,11 @@ import * as THREE from "three";
 // 모델 URL
 const MODEL_URL = "/models/apple_watch_ultra_2.glb";
 
-function MyElement3D() {
+interface MyElement3DProps {
+  onModelReady?: () => void;
+}
+
+function MyElement3D({ onModelReady }: MyElement3DProps) {
     const [isReady, setIsReady] = useState(false);
     const model1 = useGLTF(MODEL_URL);
     const light = useRef<THREE.PointLight>(null);
@@ -40,10 +44,14 @@ function MyElement3D() {
           invalidate();
           requestAnimationFrame(() => {
             invalidate();
+            // 모델이 완전히 렌더링된 후 콜백 호출
+            requestAnimationFrame(() => {
+              onModelReady?.();
+            });
           });
         });
       }
-    }, [clonedScenes, isReady, invalidate]);
+    }, [clonedScenes, isReady, invalidate, onModelReady]);
 
   useFrame((state) => {
     const time = state.clock.getElapsedTime();
