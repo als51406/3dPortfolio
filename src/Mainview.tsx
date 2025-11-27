@@ -6,6 +6,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useProgress } from "@react-three/drei";
 import LoadingSpinner from "./components/LoadingSpinner";
+import { useResponsiveCanvas, useDynamicViewportHeight } from "./hooks/useResponsiveCanvas";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -184,6 +185,10 @@ const Mainview: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showLoading, setShowLoading] = useState(true);
   const [startFadeOut, setStartFadeOut] = useState(false);
+  
+  // 반응형 설정
+  const responsive = useResponsiveCanvas();
+  const vh = useDynamicViewportHeight();
 
   // 로딩 완료 시 페이드아웃 시작
   useEffect(() => {
@@ -292,11 +297,12 @@ const Mainview: React.FC = () => {
               textAlign: "center",
               letterSpacing: 1,
               fontWeight: 600,
-              fontSize: 38,
+              fontSize: responsive.isMobile ? 24 : responsive.isTablet ? 32 : 38,
+              padding: responsive.isMobile ? "0 20px" : 0,
               textShadow: "0 2px 24px rgba(0,0,0,0.35)",
             }}
           >
-            APPLE WATCH ULTRA_2 &nbsp; INTRODUCTION BY 3D
+            {responsive.isMobile ? "APPLE WATCH ULTRA_2" : "APPLE WATCH ULTRA_2 \u00A0 INTRODUCTION BY 3D"}
           </h1>
         </div>
   {showLoading && (
@@ -306,25 +312,31 @@ const Mainview: React.FC = () => {
   )}
   <Canvas
         camera={{
-          fov: 
-          75,
-          position: [2, 1, 5],
+          fov: responsive.fov,
+          position: [2, 1, responsive.cameraDistance],
         }}
-  dpr={[1, 1.5]}
-  gl={{ alpha: false, antialias: false, powerPreference: "high-performance" }}
+  dpr={responsive.dpr}
+  gl={{ 
+    alpha: false, 
+    antialias: !responsive.isMobile, // 모바일에서는 안티앨리어싱 끄기 (성능)
+    powerPreference: "high-performance" 
+  }}
         style={{ 
           width: "100%", 
-          height: "100vh", 
+          height: `${vh}px`, // 동적 뷰포트 높이
           backgroundColor: "black", 
           display: "block",
           opacity: isLoading ? 0 : 1,
-          transition: "opacity 0.6s ease-in 0.2s", // 0.2초 지연 후 페이드인
+          transition: "opacity 0.6s ease-in 0.2s",
           willChange: "opacity"
         }}
         >
   <CameraScrollController container={sectionRef} onProgress={handleScrollProgress} />
           <Suspense fallback={null}>
-            <MyElement3D onModelReady={() => setIsLoading(false)} />
+            <MyElement3D 
+              onModelReady={() => setIsLoading(false)} 
+              scale={responsive.modelScale}
+            />
           </Suspense>
         </Canvas>
         {/* 카메라 마지막 구간에서 중앙에 등장하는 텍스트 */}
@@ -332,8 +344,8 @@ const Mainview: React.FC = () => {
           ref={outroTextRef}
           style={{
             position: "absolute",
-            top: "50%",
-            left: "12%",
+            top: responsive.textPosition.top,
+            left: responsive.textPosition.left,
             transform: "translate(-50%, -50%)",
             zIndex: 6,
             pointerEvents: "none",
@@ -345,7 +357,7 @@ const Mainview: React.FC = () => {
             style={{
               marginLeft: 0,
               paddingBottom: 2,
-              fontSize: 60,
+              fontSize: responsive.textPosition.fontSize,
               fontWeight: 800,
               letterSpacing: 0.3,
               color: "#d6d6d6ff",

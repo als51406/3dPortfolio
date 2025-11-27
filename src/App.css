@@ -195,6 +195,54 @@ html, body, #root {
   contain: layout style paint; /* 레이아웃 흔들림 억제 */
 }
 
+/* ==================== 반응형 미디어 쿼리 ==================== */
+
+/* 태블릿 (768px ~ 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .three-container canvas {
+    touch-action: pan-y; /* 세로 스크롤 허용 */
+  }
+}
+
+/* 모바일 (~ 767px) */
+@media (max-width: 767px) {
+  .three-container {
+    /* 모바일에서 배경 그라데이션 최소화 (성능) */
+    background: radial-gradient(80% 80% at 50% 50%, rgba(0, 188, 212, 0.05), transparent 70%);
+  }
+
+  .three-container canvas {
+    touch-action: pan-y; /* 세로 스크롤만 허용 */
+  }
+
+  .pin-section {
+    min-height: 100svh; /* small viewport height (모바일 주소창 대응) */
+  }
+}
+
+/* 초소형 모바일 (~ 374px) */
+@media (max-width: 374px) {
+  .three-container {
+    background: none; /* 배경 제거로 성능 향상 */
+  }
+}
+
+/* 가로 모드 모바일 */
+@media (max-width: 767px) and (orientation: landscape) {
+  .three-container canvas {
+    /* 가로 모드에서 전체 화면 활용 */
+    height: 100vh !important;
+  }
+}
+
+/* 고해상도 디스플레이 (4K, Retina) */
+@media (min-width: 1920px) {
+  .three-container {
+    /* 대형 화면에서 더 선명한 그라데이션 */
+    background: radial-gradient(50% 50% at 50% 50%, rgba(0, 188, 212, 0.12), transparent 70%);
+  }
+}
+
 
 
 

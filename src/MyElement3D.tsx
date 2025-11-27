@@ -10,9 +10,10 @@ const MODEL_URL = "/models/apple_watch_ultra_2.glb";
 
 interface MyElement3DProps {
   onModelReady?: () => void;
+  scale?: number; // 반응형 스케일
 }
 
-function MyElement3D({ onModelReady }: MyElement3DProps) {
+function MyElement3D({ onModelReady, scale = 1 }: MyElement3DProps) {
     const [isReady, setIsReady] = useState(false);
     const model1 = useGLTF(MODEL_URL);
     const light = useRef<THREE.PointLight>(null);
@@ -119,7 +120,7 @@ function MyElement3D({ onModelReady }: MyElement3DProps) {
     {/* 시계 원형 배치 */}
       {clonedScenes.map((scene, index) => {
         const angle = THREE.MathUtils.degToRad(45 * index);
-        const radius = 3;
+        const radius = 3 * scale; // 반응형 스케일 적용
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
 
@@ -139,7 +140,7 @@ function MyElement3D({ onModelReady }: MyElement3DProps) {
             position={[x, 0.5, z]}
             rotation={[euler.x, euler.y, euler.z]}
           >
-            <primitive object={scene} scale={12} />
+            <primitive object={scene} scale={12 * scale} />
           </group>
         );
       })}

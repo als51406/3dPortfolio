@@ -4,6 +4,7 @@ import { OrbitControls, useGLTF, Environment, Text } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useResponsiveCanvas, useDynamicViewportHeight } from "./hooks/useResponsiveCanvas";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -124,6 +125,10 @@ const Detailview: React.FC = () => {
   const autoRotateStateRef = useRef(false);
   const rotateBadgeRef = useRef<HTMLDivElement | null>(null);
   const badgeShownRef = useRef(false); // 현재 표시 상태를 추적(토글)
+  
+  // 반응형 설정
+  const responsive = useResponsiveCanvas();
+  const vh = useDynamicViewportHeight();
 
   // 텍스트 3회: 아래→중앙(최대)→위로 사라짐 (스크럽 통일)
   useLayoutEffect(() => {
@@ -440,10 +445,13 @@ const Detailview: React.FC = () => {
       </div>
 
       <Canvas
-        camera={{ fov: 75, position: [2, 1, 5] }}
-        dpr={[1, 1.5]}
-        gl={{ powerPreference: "high-performance" as any }}
-        style={{ width: "100%", height: "100vh" }}
+        camera={{ fov: responsive.fov, position: [2, 1, responsive.cameraDistance] }}
+        dpr={responsive.dpr}
+        gl={{ 
+          powerPreference: "high-performance" as any,
+          antialias: !responsive.isMobile // 모바일 성능 최적화
+        }}
+        style={{ width: "100%", height: `${vh}px` }}
         onCreated={(state) => {
           cameraRef.current = state.camera as THREE.PerspectiveCamera;
           requestAnimationFrame(() => ScrollTrigger.refresh());
