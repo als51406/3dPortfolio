@@ -1,4 +1,4 @@
-import React, { useRef, useLayoutEffect } from "react";
+import React, { useRef, useLayoutEffect, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, useGLTF, Environment, Text } from "@react-three/drei";
 import * as THREE from "three";
@@ -20,7 +20,7 @@ const CAM_EASE_IN: gsap.EaseString = "power1.out";
 const CAM_EASE_OUT: gsap.EaseString = "power1.inOut";
 const ROT_Y_START = 0;
 const ROT_Y_END = Math.PI * 2;
-const ROT_EASE: gsap.EaseString = "none";
+// const ROT_EASE: gsap.EaseString = "none"; // 현재 미사용
 const POS_Y_START = -11.5;
 const POS_Y_END = 0;
 const POS_Y_OVERSHOOT = 1.0;
@@ -28,7 +28,7 @@ const POS_OVERSHOOT_PORTION = 0.85;
 
 function ProductModel({ onReady }: { onReady?: (group: THREE.Group) => void }) {
   const { scene } = useGLTF(MODEL_URL as string);
-  const clonedScene = scene.clone(true);
+  const clonedScene = useMemo(() => scene.clone(true), [scene]);
   const groupRef = useRef<THREE.Group>(null);
 
   useLayoutEffect(() => {
@@ -453,8 +453,8 @@ const Detailview: React.FC = () => {
         <directionalLight position={[5, 10, 5]} intensity={1.2} />
         <Environment preset="city" />
         <BillboardText offset={10}>Detail View</BillboardText>
-        <ProductModel
-          onReady={(g) => {
+          <ProductModel
+            onReady={(g) => {
             modelGroupRef.current = g;
             
             // 타임라인이 이미 준비되어 있다면 즉시 합류

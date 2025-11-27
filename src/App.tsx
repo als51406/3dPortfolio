@@ -8,6 +8,7 @@ import MainTextView from './MainTextView';
 // import AnimatedTextScroll from './AnimatedTextScroll';
 import Lenis from 'lenis';
 import gsap from 'gsap';
+import { useGLTF } from '@react-three/drei';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import ExplainView from './ExplainView';
 // import { ThreeCanvas } from './ThreeCanvas'; // 현재 미사용
@@ -19,6 +20,11 @@ gsap.registerPlugin(ScrollTrigger);
 
 
 function App() {
+  // 모델 사전 로드 (앱 시작 시)
+  useEffect(() => {
+    useGLTF.preload('/models/apple_watch_ultra_2.glb');
+  }, []);
+  
   // Global smooth scroll via Lenis + GSAP sync
   useEffect(() => {
     const lenis = new Lenis({

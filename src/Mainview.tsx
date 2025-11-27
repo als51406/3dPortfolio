@@ -283,7 +283,7 @@ const Mainview: React.FC = () => {
         style={{ width: "100%", height: "100vh", backgroundColor: "black", display: "block" }}
         >
   <CameraScrollController container={sectionRef} onProgress={handleScrollProgress} />
-        <MyElement3D />
+          <MyElement3D />
         </Canvas>
         {/* 카메라 마지막 구간에서 중앙에 등장하는 텍스트 */}
         <div

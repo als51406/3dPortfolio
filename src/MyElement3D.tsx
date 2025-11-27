@@ -1,8 +1,8 @@
 
 
 import { useGLTF } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useRef, useEffect, useMemo, useState, useLayoutEffect } from "react";
 import * as THREE from "three";
 
 
@@ -16,26 +16,42 @@ import * as THREE from "three";
 // 모델 URL
 const MODEL_URL = "/models/apple_watch_ultra_2.glb";
 
-// 개발 환경에서 GLTFLoader 캐시 강제 초기화
-if (process.env.NODE_ENV === 'development') {
-  try {
-    useGLTF.clear(MODEL_URL);
-  } catch (e) {
-    console.log('캐시 클리어 무시:', e);
-  }
-}
-
-// 모델 사전 로드 (메인뷰용)
-useGLTF.preload(MODEL_URL);
-
 function MyElement3D() {
+    const [isReady, setIsReady] = useState(false);
     const model1 = useGLTF(MODEL_URL);
-    // Note: model2와 model3는 현재 사용되지 않지만, 향후 확장을 위해 주석 처리
-    // const model2 = useGLTF("/models/samsung__galaxy__watch_5.glb");
-    // const model3 = useGLTF("/models/samsung__galaxy__watch_5.glb");
-  const light = useRef<THREE.PointLight>(null);
-
-  // useHelper(light as React.RefObject<THREE.PointLight>, THREE.PointLightHelper, 0.7); //빛의 가이드라인
+    const light = useRef<THREE.PointLight>(null);
+    const { invalidate } = useThree();
+    
+    // 개발 환경에서 언마운트 시 캐시 클리어
+    useEffect(() => {
+      return () => {
+        if (process.env.NODE_ENV === 'development') {
+          useGLTF.clear(MODEL_URL);
+        }
+      };
+    }, []);
+    
+    // 모델 복제를 한 번만 수행 (메모리 최적화)
+    const clonedScenes = useMemo(() => {
+      if (model1 && 'scene' in model1 && model1.scene) {
+        const scenes = Array.from({ length: 8 }).map(() => model1.scene.clone());
+        return scenes;
+      }
+      return [];
+    }, [model1]);
+    
+    // 레이아웃 준비 후 렌더링 활성화 + 강제 리렌더 (이중 안전장치)
+    useLayoutEffect(() => {
+      if (clonedScenes.length > 0 && !isReady) {
+        setIsReady(true);
+        requestAnimationFrame(() => {
+          invalidate();
+          requestAnimationFrame(() => {
+            invalidate();
+          });
+        });
+      }
+    }, [clonedScenes, isReady, invalidate]);
 
   useFrame((state) => {
     const time = state.clock.getElapsedTime();
@@ -47,6 +63,11 @@ function MyElement3D() {
       }
     }
   });
+  
+  // 모델이 준비될 때까지 기다림
+  if (!isReady || clonedScenes.length === 0) {
+    return null;
+  }
 
   return (
     <>
@@ -94,7 +115,7 @@ function MyElement3D() {
         />
       </mesh>
     {/* 시계 원형 배치 */}
-      {Array.from({ length: 8 }).map((_, index) => {
+      {clonedScenes.map((scene, index) => {
         const angle = THREE.MathUtils.degToRad(45 * index);
         const radius = 3;
         const x = Math.cos(angle) * radius;
@@ -110,21 +131,16 @@ function MyElement3D() {
         );
         const euler = new THREE.Euler().setFromQuaternion(quaternion);
 
-
-        // model1.scene이 존재하는지 타입 가드
-        if (model1 && 'scene' in model1 && model1.scene) {
-    return (
-      <group
-        key={index}
-        position={[x, 0.5, z]}
-        rotation={[euler.x, euler.y, euler.z]}
-      >
-        <primitive object={model1.scene.clone()} scale={12} />
-      </group>
-    );
-  }
-  return null;
-})}
+        return (
+          <group
+            key={index}
+            position={[x, 0.5, z]}
+            rotation={[euler.x, euler.y, euler.z]}
+          >
+            <primitive object={scene} scale={12} />
+          </group>
+        );
+      })}
 
       <group name="smallSpherePivot">
         <mesh position={[3, 0.5, 0]}>
