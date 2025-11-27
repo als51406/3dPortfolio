@@ -198,11 +198,11 @@ const Mainview: React.FC = () => {
     }
   }, [isLoading]);
 
-  // 중앙 인트로 문구: 스크롤이 시작되면 아래로 사라지도록 연결
+  // 중앙 인트로 문구: 초기 상태 설정 및 스크롤 애니메이션
   useEffect(() => {
     if (!introRef.current) return;
-    // 인트로 애니메이션 타임라인(정규화, 진행도 0~1)
-    gsap.set(introRef.current, { yPercent: 0, opacity: 1 });
+    // 초기 위치 설정 (opacity는 CSS transition이 처리)
+    gsap.set(introRef.current, { yPercent: 0 });
     const introTl = gsap
       .timeline({ paused: true })
       .to(introRef.current, {
@@ -281,7 +281,8 @@ const Mainview: React.FC = () => {
             pointerEvents: "none",
             zIndex: 5,
             opacity: isLoading ? 0 : 1,
-            transition: "opacity 0.5s ease-in 0.3s", // 0.3초 지연 후 페이드인
+            transition: "opacity 0.8s ease-in-out 0.4s", // 0.4초 지연 후 0.8초 동안 페이드인
+            willChange: "opacity",
           }}
         >
           <h1
