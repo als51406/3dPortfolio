@@ -149,7 +149,7 @@ const Detailview: React.FC = () => {
         pinSpacing: true,
         anticipatePin: 1,
         invalidateOnRefresh: true,
-        markers: true,
+        markers: false,
         onToggle: (self) => {
           section.style.zIndex = self.isActive ? "999" : "auto";
         },

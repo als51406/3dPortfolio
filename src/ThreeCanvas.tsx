@@ -124,7 +124,6 @@ export const ThreeCanvas: React.FC = () => {
   ScrollTrigger.getById('glbScroll')?.kill();
 
   // Timeline with ScrollTrigger
-  const debugMarkers = process.env.NODE_ENV !== 'production';
   tl = gsap.timeline({
           defaults: { ease: 'none' },
           scrollTrigger: {
@@ -136,7 +135,7 @@ export const ThreeCanvas: React.FC = () => {
             pin: true,
             anticipatePin: 1,
             invalidateOnRefresh: true,
-            markers: debugMarkers,
+            markers: false,
             pinSpacing: true,
             pinType: 'fixed',
       fastScrollEnd: true,
