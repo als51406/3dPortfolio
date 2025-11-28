@@ -171,9 +171,6 @@ export const ThreeCanvas: React.FC = () => {
           },
           0.5
         );
-
-        // Force ScrollTrigger to recalc after model+timeline ready
-        requestAnimationFrame(() => ScrollTrigger.refresh());
       },
       undefined,
       (err) => {

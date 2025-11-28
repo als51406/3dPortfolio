@@ -11,6 +11,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import ExplainView from './ExplainView';
 import SpecificationView from './SpecificationView';
 import Footer from './Footer';
+import { immediateScrollRefresh } from './utils/scrollManager';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -119,9 +120,9 @@ function App() {
     };
     rafId = requestAnimationFrame(raf);
 
-    // Allow layout + mainview pin to settle, then force remeasure
-    const t1 = setTimeout(() => ScrollTrigger.refresh(), 0);
-    const t2 = setTimeout(() => ScrollTrigger.refresh(), 250);
+    // ✅ 초기 레이아웃 안정화 후 한 번만 refresh (scrollManager 사용 안 함)
+    const t1 = setTimeout(() => immediateScrollRefresh(), 0);
+    const t2 = setTimeout(() => immediateScrollRefresh(), 250);
 
     return () => {
       clearTimeout(t1);

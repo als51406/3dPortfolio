@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { scheduleScrollRefresh } from '../utils/scrollManager';
 
 export interface ResponsiveConfig {
   isMobile: boolean;
@@ -111,6 +112,9 @@ export const useResponsiveCanvas = (): ResponsiveConfig => {
         scrollDuration,
         textPosition,
       });
+      
+      // ✅ config 업데이트 직후 ScrollTrigger refresh 스케줄링
+      scheduleScrollRefresh(100);
     };
 
     // 초기 설정

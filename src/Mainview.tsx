@@ -149,15 +149,6 @@ function CameraScrollController({ container, onProgress }: CameraScrollControlle
     };
   }, [container, camera, onProgress]);
 
-  // 레이아웃 변화 시 핀/스페이서 측정값을 즉시 갱신해 상단 공백 플래시 방지
-  useEffect(() => {
-    const onResize = () => ScrollTrigger.refresh();
-    // 첫 렌더 직후 한 번 더 강제 새로고침
-    requestAnimationFrame(() => ScrollTrigger.refresh());
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
   // 언마운트 시 트윈 정리
   useEffect(() => {
     return () => {

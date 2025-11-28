@@ -306,7 +306,6 @@ const Detailview: React.FC = () => {
       );
       
       modelTweenAddedRef.current = true;
-      requestAnimationFrame(() => ScrollTrigger.refresh());
     }
 
     // 회색 원 배지 초기 상태만 세팅(등장은 onUpdate에서 1회 처리)
@@ -573,7 +572,6 @@ const Detailview: React.FC = () => {
             cameraRef.current.far = 1000;
             cameraRef.current.updateProjectionMatrix();
           }
-          requestAnimationFrame(() => ScrollTrigger.refresh());
         }}
       >
         <ambientLight intensity={0.7} />
@@ -656,7 +654,6 @@ const Detailview: React.FC = () => {
               
               modelTweenAddedRef.current = true;
             }
-            requestAnimationFrame(() => ScrollTrigger.refresh());
           }}
         />
         <OrbitControls ref={controlsRef} enableZoom={false} autoRotate autoRotateSpeed={5} />
