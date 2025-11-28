@@ -41,42 +41,20 @@ const MyElement3D = ({ scale = 1 }: MyElement3DProps) => {
           if (hasMesh) {
             clearInterval(checkInterval);
             
-            if (process.env.NODE_ENV === 'development') {
-              console.log('✅ [MyElement3D] 모델 완전히 준비됨:', {
-                hasScene: !!model1.scene,
-                childrenCount: model1.scene.children.length,
-                hasMesh,
-                checkCount,
-              });
-            }
-            
             // ✅ 상태 변경으로 리렌더링 트리거
             setIsModelReady(true);
             
             // ✅ 안전장치: 200ms 후 한 번 더 강제 리렌더링
             setTimeout(() => {
               setRenderKey(prev => prev + 1);
-              if (process.env.NODE_ENV === 'development') {
-                console.log('🔄 [MyElement3D] 강제 리렌더링 트리거');
-              }
             }, 200);
-          } else if (process.env.NODE_ENV === 'development' && checkCount % 10 === 0) {
-            console.log('⏳ [MyElement3D] scene은 있지만 mesh 없음:', checkCount);
           }
-        } else if (process.env.NODE_ENV === 'development' && checkCount % 10 === 0) {
-          console.log('⏳ [MyElement3D] 모델 폴링 중...', checkCount, {
-            hasModel: !!model1,
-            hasScene: !!model1?.scene,
-            childrenCount: model1?.scene?.children?.length || 0,
-          });
         }
         
         // 최대 횟수 도달
         if (checkCount >= maxChecks) {
           clearInterval(checkInterval);
-          if (process.env.NODE_ENV === 'development') {
-            console.error('❌ [MyElement3D] 모델 로드 타임아웃');
-          }
+          console.error('[MyElement3D] 모델 로드 타임아웃');
         }
       }, 100);
       
@@ -88,14 +66,7 @@ const MyElement3D = ({ scale = 1 }: MyElement3DProps) => {
     const clonedScenes = useMemo(() => {
       // ✅ isModelReady 상태 체크 추가
       if (!isModelReady || !model1 || !model1.scene || !model1.scene.children.length) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('⏳ [MyElement3D] 모델 대기 중...');
-        }
         return [];
-      }
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔄 [MyElement3D] 모델 클론 시작...');
       }
         
         const scenes = Array.from({ length: 8 }).map(() => {
@@ -129,35 +100,12 @@ const MyElement3D = ({ scale = 1 }: MyElement3DProps) => {
           return clonedScene;
         });
         
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ [MyElement3D] 모델 클론 완료:', scenes.length, '개');
-          // 첫 번째 모델의 Material 상태 로깅
-          if (scenes.length > 0) {
-            scenes[0].traverse((child) => {
-              if ((child as THREE.Mesh).isMesh) {
-                const mesh = child as THREE.Mesh;
-                const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-                console.log('  - Mesh visible:', mesh.visible, '| Materials:', materials.length);
-              }
-            });
-          }
-        }
-        
         return scenes;
       
       return [];
     }, [model1, model1.scene, isModelReady]); // ✅ 의존성 수정
     
-    // ✅ clonedScenes 생성 완료 시 로그 + Three.js Scene에 추가 확인
-    useEffect(() => {
-      if (clonedScenes.length > 0) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ [MyElement3D] clonedScenes 생성 완료:', clonedScenes.length, '개');
-          console.log('  - 첫 번째 scene 타입:', clonedScenes[0].type);
-          console.log('  - 첫 번째 scene children:', clonedScenes[0].children.length);
-        }
-      }
-    }, [clonedScenes]);
+
 
   useFrame((state) => {
     const time = state.clock.getElapsedTime();
@@ -172,24 +120,7 @@ const MyElement3D = ({ scale = 1 }: MyElement3DProps) => {
   
   // ✅ 모델이 로드되지 않았으면 null 반환
   if (!model1 || !model1.scene || clonedScenes.length === 0) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('⚠️ [MyElement3D] 렌더링 차단:', {
-        hasModel: !!model1,
-        hasScene: !!model1?.scene,
-        clonedScenesLength: clonedScenes.length,
-        isModelReady,
-      });
-    }
     return null;
-  }
-
-  // ✅ 렌더링 직전 최종 로그
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🎨 [MyElement3D] JSX 렌더링 시작:', {
-      clonedScenesCount: clonedScenes.length,
-      scale,
-      renderKey,
-    });
   }
 
   return (
@@ -253,16 +184,6 @@ const MyElement3D = ({ scale = 1 }: MyElement3DProps) => {
             dir
         );
         const euler = new THREE.Euler().setFromQuaternion(quaternion);
-        
-        // ✅ 첫 번째 시계만 상세 로그
-        if (index === 0 && process.env.NODE_ENV === 'development') {
-          console.log('🕐 [MyElement3D] 첫 번째 시계 렌더링:', {
-            position: [x, 0.5, z],
-            scale: 12 * scale,
-            sceneType: scene.type,
-            sceneChildren: scene.children.length,
-          });
-        }
 
         return (
           <group

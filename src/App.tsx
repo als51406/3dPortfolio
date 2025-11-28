@@ -28,10 +28,6 @@ function App() {
     let checkInterval: NodeJS.Timeout;
     let fallbackTimeout: NodeJS.Timeout;
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🚀 [App] 모델 preload 시작');
-    }
-    
     // 1단계: preload 시작 (동기적으로 캐시에 로드)
     useGLTF.preload(MODEL_URL);
     
@@ -56,15 +52,6 @@ function App() {
           });
           
           if (hasMesh) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('✅ [App] 모델 완전히 준비됨:', {
-                hasScene: !!cached.scene,
-                childrenCount: cached.scene.children.length,
-                hasMesh,
-                checkCount,
-              });
-            }
-            
             if (mounted) {
               clearInterval(checkInterval);
               clearTimeout(fallbackTimeout);
@@ -74,39 +61,22 @@ function App() {
                 if (mounted) {
                   setStartFadeOut(true);
                   setModelPreloaded(true);
-                  
-                  if (process.env.NODE_ENV === 'development') {
-                    console.log('🎉 [App] 메인 콘텐츠 표시 (scene + mesh 준비 완료)');
-                  }
                 }
               }, 200);
             }
-          } else if (process.env.NODE_ENV === 'development') {
-            console.log('⏳ [App] scene은 있지만 mesh 없음:', checkCount);
           }
-        } else if (process.env.NODE_ENV === 'development') {
-          console.log('⏳ [App] 폴링 중...', checkCount, '/', maxChecks, {
-            hasCache: !!cached,
-            hasScene: !!cached?.scene,
-            childrenCount: cached?.scene?.children?.length || 0,
-          });
         }
         
         // 최대 체크 횟수 도달 시 fallback
         if (checkCount >= maxChecks) {
           clearInterval(checkInterval);
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('⚠️ [App] 최대 체크 횟수 도달, fallback 적용');
-          }
           if (mounted) {
             setStartFadeOut(true);
             setModelPreloaded(true);
           }
         }
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('⚠️ [App] 캐시 체크 중 에러:', error);
-        }
+        console.error('[App] 모델 로딩 중 에러:', error);
       }
     }, 100);
     
@@ -114,9 +84,6 @@ function App() {
     fallbackTimeout = setTimeout(() => {
       if (mounted) {
         clearInterval(checkInterval);
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('⚠️ [App] 2초 fallback 적용 (강제 표시)');
-        }
         setStartFadeOut(true);
         setModelPreloaded(true);
       }
