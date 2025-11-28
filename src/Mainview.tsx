@@ -120,6 +120,11 @@ function CameraScrollController({ container, onProgress }: CameraScrollControlle
       pinSpacing: true,
       anticipatePin: 1,
       refreshPriority: 1000,
+      onRefresh: () => {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔄 [Mainview] ScrollTrigger refresh 감지');
+        }
+      },
       onUpdate: (self) => {
         // 전체 진행도 0..1
         const raw = self.progress;
@@ -328,6 +333,7 @@ const Mainview: React.FC = () => {
           </h1>
         </div>
   <Canvas
+        frameloop="always"
         camera={{
           fov: responsive.fov,
           position: [2, 1, responsive.cameraDistance],

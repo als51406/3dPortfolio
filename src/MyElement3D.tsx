@@ -1,8 +1,9 @@
 
 
+import React from "react";
 import { useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useRef, useEffect, useMemo, useState, useLayoutEffect } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 
 // 모델 URL
@@ -12,27 +13,151 @@ interface MyElement3DProps {
   scale?: number; // 반응형 스케일
 }
 
-function MyElement3D({ scale = 1 }: MyElement3DProps) {
-    const [isReady, setIsReady] = useState(false);
-    const model1 = useGLTF(MODEL_URL);
+// ✅ React.memo 제거: isModelReady 상태 변경 시 리렌더링 필요
+const MyElement3D = ({ scale = 1 }: MyElement3DProps) => {
+    // ✅ suspense: false로 명시적 비활성화 (수동 로딩 관리)
+    const model1 = useGLTF(MODEL_URL, false);
     const light = useRef<THREE.PointLight>(null);
-    const { invalidate } = useThree();
+    const [isModelReady, setIsModelReady] = useState(false);
+    const [renderKey, setRenderKey] = useState(0); // ✅ 강제 리렌더링용
     
-    // 모델 복제를 한 번만 수행 (메모리 최적화)
-    const clonedScenes = useMemo(() => {
-      if (model1 && 'scene' in model1 && model1.scene) {
-        const scenes = Array.from({ length: 8 }).map(() => model1.scene.clone());
-        return scenes;
-      }
-      return [];
+    // ✅ 모델이 실제로 사용 가능한 상태인지 폴링으로 체크
+    useEffect(() => {
+      let checkCount = 0;
+      const maxChecks = 50; // 5초
+      
+      const checkInterval = setInterval(() => {
+        checkCount++;
+        
+        if (model1 && model1.scene && model1.scene.children && model1.scene.children.length > 0) {
+          // ✅ scene 내부에 실제 mesh가 있는지 확인
+          let hasMesh = false;
+          model1.scene.traverse((child: any) => {
+            if (child.isMesh) {
+              hasMesh = true;
+            }
+          });
+          
+          if (hasMesh) {
+            clearInterval(checkInterval);
+            
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ [MyElement3D] 모델 완전히 준비됨:', {
+                hasScene: !!model1.scene,
+                childrenCount: model1.scene.children.length,
+                hasMesh,
+                checkCount,
+              });
+            }
+            
+            // ✅ 상태 변경으로 리렌더링 트리거
+            setIsModelReady(true);
+            
+            // ✅ 안전장치: 200ms 후 한 번 더 강제 리렌더링
+            setTimeout(() => {
+              setRenderKey(prev => prev + 1);
+              if (process.env.NODE_ENV === 'development') {
+                console.log('🔄 [MyElement3D] 강제 리렌더링 트리거');
+              }
+            }, 200);
+          } else if (process.env.NODE_ENV === 'development' && checkCount % 10 === 0) {
+            console.log('⏳ [MyElement3D] scene은 있지만 mesh 없음:', checkCount);
+          }
+        } else if (process.env.NODE_ENV === 'development' && checkCount % 10 === 0) {
+          console.log('⏳ [MyElement3D] 모델 폴링 중...', checkCount, {
+            hasModel: !!model1,
+            hasScene: !!model1?.scene,
+            childrenCount: model1?.scene?.children?.length || 0,
+          });
+        }
+        
+        // 최대 횟수 도달
+        if (checkCount >= maxChecks) {
+          clearInterval(checkInterval);
+          if (process.env.NODE_ENV === 'development') {
+            console.error('❌ [MyElement3D] 모델 로드 타임아웃');
+          }
+        }
+      }, 100);
+      
+      return () => clearInterval(checkInterval);
     }, [model1]);
     
-    // 레이아웃 준비 후 렌더링 활성화 (단순하고 안정적인 로직)
-    useLayoutEffect(() => {
-      if (clonedScenes.length > 0 && !isReady) {
-        setIsReady(true);
+    // 모델 복제를 한 번만 수행 (메모리 최적화)
+    // ✅ model1.scene을 명시적으로 의존성에 추가
+    const clonedScenes = useMemo(() => {
+      // ✅ isModelReady 상태 체크 추가
+      if (!isModelReady || !model1 || !model1.scene || !model1.scene.children.length) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('⏳ [MyElement3D] 모델 대기 중...');
+        }
+        return [];
       }
-    }, [clonedScenes, isReady]);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔄 [MyElement3D] 모델 클론 시작...');
+      }
+        
+        const scenes = Array.from({ length: 8 }).map(() => {
+          const clonedScene = model1.scene.clone();
+          
+          // ✅ 모든 Material을 visible하게 강제 설정 (렌더링 보장)
+          clonedScene.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+              const mesh = child as THREE.Mesh;
+              mesh.visible = true; // 강제로 보이게
+              
+              // Material이 배열인 경우와 단일인 경우 모두 처리
+              const materials = Array.isArray(mesh.material) 
+                ? mesh.material 
+                : [mesh.material];
+              
+              materials.forEach((material) => {
+                if (material) {
+                  material.visible = true;
+                  // 투명도가 0인 경우 1로 설정
+                  if (material.opacity !== undefined && material.opacity === 0) {
+                    material.opacity = 1;
+                  }
+                  // needsUpdate로 변경사항 적용
+                  material.needsUpdate = true;
+                }
+              });
+            }
+          });
+          
+          return clonedScene;
+        });
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ [MyElement3D] 모델 클론 완료:', scenes.length, '개');
+          // 첫 번째 모델의 Material 상태 로깅
+          if (scenes.length > 0) {
+            scenes[0].traverse((child) => {
+              if ((child as THREE.Mesh).isMesh) {
+                const mesh = child as THREE.Mesh;
+                const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+                console.log('  - Mesh visible:', mesh.visible, '| Materials:', materials.length);
+              }
+            });
+          }
+        }
+        
+        return scenes;
+      
+      return [];
+    }, [model1, model1.scene, isModelReady]); // ✅ 의존성 수정
+    
+    // ✅ clonedScenes 생성 완료 시 로그 + Three.js Scene에 추가 확인
+    useEffect(() => {
+      if (clonedScenes.length > 0) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ [MyElement3D] clonedScenes 생성 완료:', clonedScenes.length, '개');
+          console.log('  - 첫 번째 scene 타입:', clonedScenes[0].type);
+          console.log('  - 첫 번째 scene children:', clonedScenes[0].children.length);
+        }
+      }
+    }, [clonedScenes]);
 
   useFrame((state) => {
     const time = state.clock.getElapsedTime();
@@ -45,9 +170,26 @@ function MyElement3D({ scale = 1 }: MyElement3DProps) {
     }
   });
   
-  // 모델이 준비될 때까지 기다림
-  if (!isReady || clonedScenes.length === 0) {
+  // ✅ 모델이 로드되지 않았으면 null 반환
+  if (!model1 || !model1.scene || clonedScenes.length === 0) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('⚠️ [MyElement3D] 렌더링 차단:', {
+        hasModel: !!model1,
+        hasScene: !!model1?.scene,
+        clonedScenesLength: clonedScenes.length,
+        isModelReady,
+      });
+    }
     return null;
+  }
+
+  // ✅ 렌더링 직전 최종 로그
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🎨 [MyElement3D] JSX 렌더링 시작:', {
+      clonedScenesCount: clonedScenes.length,
+      scale,
+      renderKey,
+    });
   }
 
   return (
@@ -96,7 +238,7 @@ function MyElement3D({ scale = 1 }: MyElement3DProps) {
         />
       </mesh>
     {/* 시계 원형 배치 */}
-      {clonedScenes.map((scene, index) => {
+      {clonedScenes.length > 0 && clonedScenes.map((scene, index) => {
         const angle = THREE.MathUtils.degToRad(45 * index);
         const radius = 3 * scale; // 반응형 스케일 적용
         const x = Math.cos(angle) * radius;
@@ -111,10 +253,20 @@ function MyElement3D({ scale = 1 }: MyElement3DProps) {
             dir
         );
         const euler = new THREE.Euler().setFromQuaternion(quaternion);
+        
+        // ✅ 첫 번째 시계만 상세 로그
+        if (index === 0 && process.env.NODE_ENV === 'development') {
+          console.log('🕐 [MyElement3D] 첫 번째 시계 렌더링:', {
+            position: [x, 0.5, z],
+            scale: 12 * scale,
+            sceneType: scene.type,
+            sceneChildren: scene.children.length,
+          });
+        }
 
         return (
           <group
-            key={index}
+            key={`watch-${index}-${renderKey}`}
             position={[x, 0.5, z]}
             rotation={[euler.x, euler.y, euler.z]}
           >
@@ -149,6 +301,6 @@ function MyElement3D({ scale = 1 }: MyElement3DProps) {
       </group>
     </>
   );
-}
+};
 
 export default MyElement3D;

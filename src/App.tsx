@@ -18,75 +18,114 @@ gsap.registerPlugin(ScrollTrigger);
 // 모델 URL
 const MODEL_URL = '/models/apple_watch_ultra_2.glb';
 
-// 🔥 모델 preload 즉시 실행
-useGLTF.preload(MODEL_URL);
-
 function App() {
   const [modelPreloaded, setModelPreloaded] = useState(false);
   const [startFadeOut, setStartFadeOut] = useState(false);
-  const loadCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 실제 모델 로딩 완료를 폴링으로 확인
+  // ✅ preload + 캐시 확인 기반 로딩 (실제 로드 완료 대기)
   useEffect(() => {
     let mounted = true;
-    let checkCount = 0;
-    const maxChecks = 50; // 최대 5초 (100ms * 50)
+    let checkInterval: NodeJS.Timeout;
+    let fallbackTimeout: NodeJS.Timeout;
     
-    const checkModelLoaded = () => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🚀 [App] 모델 preload 시작');
+    }
+    
+    // 1단계: preload 시작 (동기적으로 캐시에 로드)
+    useGLTF.preload(MODEL_URL);
+    
+    let checkCount = 0;
+    const maxChecks = 30; // 최대 3초 (100ms * 30)
+    
+    // 2단계: scene 객체가 완전히 준비되었는지 폴링 (100ms마다 체크)
+    checkInterval = setInterval(() => {
+      checkCount++;
+      
       try {
-        // useGLTF 캐시에 모델이 있는지 확인
-        const cache = (useGLTF as any).cache;
-        const isCached = cache && cache.has(MODEL_URL);
+        const cached = (useGLTF as any).cache?.get?.(MODEL_URL);
         
-        checkCount++;
+        // ✅ 캐시 존재 + scene 객체 완성도 체크 + mesh 존재 체크
+        if (cached && cached.scene && cached.scene.children && cached.scene.children.length > 0) {
+          // ✅ 추가 검증: scene 내부에 실제 mesh가 있는지 확인
+          let hasMesh = false;
+          cached.scene.traverse((child: any) => {
+            if (child.isMesh) {
+              hasMesh = true;
+            }
+          });
+          
+          if (hasMesh) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ [App] 모델 완전히 준비됨:', {
+                hasScene: !!cached.scene,
+                childrenCount: cached.scene.children.length,
+                hasMesh,
+                checkCount,
+              });
+            }
+            
+            if (mounted) {
+              clearInterval(checkInterval);
+              clearTimeout(fallbackTimeout);
+              
+              // ✅ 200ms 추가 대기 후 표시 (안전 마진)
+              setTimeout(() => {
+                if (mounted) {
+                  setStartFadeOut(true);
+                  setModelPreloaded(true);
+                  
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('🎉 [App] 메인 콘텐츠 표시 (scene + mesh 준비 완료)');
+                  }
+                }
+              }, 200);
+            }
+          } else if (process.env.NODE_ENV === 'development') {
+            console.log('⏳ [App] scene은 있지만 mesh 없음:', checkCount);
+          }
+        } else if (process.env.NODE_ENV === 'development') {
+          console.log('⏳ [App] 폴링 중...', checkCount, '/', maxChecks, {
+            hasCache: !!cached,
+            hasScene: !!cached?.scene,
+            childrenCount: cached?.scene?.children?.length || 0,
+          });
+        }
         
-        if (isCached) {
-          if (mounted) {
-            // 페이드아웃 시작
-            setStartFadeOut(true);
-            // 페이드아웃 애니메이션 후 상태 변경
-            setTimeout(() => {
-              setModelPreloaded(true);
-            }, 800); // 페이드아웃 시간
+        // 최대 체크 횟수 도달 시 fallback
+        if (checkCount >= maxChecks) {
+          clearInterval(checkInterval);
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('⚠️ [App] 최대 체크 횟수 도달, fallback 적용');
           }
-          if (loadCheckIntervalRef.current) {
-            clearInterval(loadCheckIntervalRef.current);
-          }
-        } else if (checkCount >= maxChecks) {
-          // 타임아웃: 5초 후에도 로딩 안 되면 강제 진행
-          console.warn('⚠️ 모델 로딩 타임아웃 (5초) - 렌더링 강제 시작');
           if (mounted) {
             setStartFadeOut(true);
-            setTimeout(() => {
-              setModelPreloaded(true);
-            }, 800);
-          }
-          if (loadCheckIntervalRef.current) {
-            clearInterval(loadCheckIntervalRef.current);
+            setModelPreloaded(true);
           }
         }
       } catch (error) {
-        console.error('❌ 모델 캐시 확인 실패:', error);
-        if (mounted) {
-          setModelPreloaded(true);
-        }
-        if (loadCheckIntervalRef.current) {
-          clearInterval(loadCheckIntervalRef.current);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ [App] 캐시 체크 중 에러:', error);
         }
       }
-    };
+    }, 100);
     
-    // 100ms마다 캐시 확인
-    loadCheckIntervalRef.current = setInterval(checkModelLoaded, 100);
-    
-    // 즉시 한 번 확인
-    checkModelLoaded();
+    // 3단계: fallback 타이머 (2초 후에는 무조건 표시)
+    fallbackTimeout = setTimeout(() => {
+      if (mounted) {
+        clearInterval(checkInterval);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ [App] 2초 fallback 적용 (강제 표시)');
+        }
+        setStartFadeOut(true);
+        setModelPreloaded(true);
+      }
+    }, 2000);
     
     return () => {
       mounted = false;
-      if (loadCheckIntervalRef.current) {
-        clearInterval(loadCheckIntervalRef.current);
-      }
+      clearInterval(checkInterval);
+      clearTimeout(fallbackTimeout);
     };
   }, []);
 
@@ -120,20 +159,18 @@ function App() {
     };
     rafId = requestAnimationFrame(raf);
 
-    // ✅ 초기 레이아웃 안정화 후 한 번만 refresh (scrollManager 사용 안 함)
-    const t1 = setTimeout(() => immediateScrollRefresh(), 0);
-    const t2 = setTimeout(() => immediateScrollRefresh(), 250);
-
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
       cancelAnimationFrame(rafId);
       lenis.off('scroll', onScroll);
       // @ts-ignore
       lenis.destroy && lenis.destroy();
-  try { delete (window as any).__lenis; } catch {}
+      try { delete (window as any).__lenis; } catch {}
     };
-  }, []);
+  }, []); // ✅ 한 번만 초기화 - modelPreloaded 의존성 제거!
+  
+  // ✅ modelPreloaded 변경 시 ScrollTrigger refresh (제거)
+  // → MyElement3D가 마운트되면 Mainview 내부에서 자동으로 ScrollTrigger 생성
+  // → 별도 refresh 불필요 (오히려 Canvas 리셋 발생)
 
   return (
     <>
@@ -194,7 +231,8 @@ function App() {
         <div id='mainvisualWrap'>
         
     <Suspense fallback={null}>
-      <Mainview/>
+      {/* ✅ key prop으로 언마운트 방지 - 한 번만 마운트됨 */}
+      <Mainview key="mainview-stable" />
     </Suspense>
 
     <MainTextView/>

@@ -112,32 +112,39 @@ export const useResponsiveCanvas = (): ResponsiveConfig => {
         scrollDuration,
         textPosition,
       });
-      
-      // ✅ config 업데이트 직후 ScrollTrigger refresh 스케줄링
-      scheduleScrollRefresh(100);
     };
 
-    // 초기 설정
+    // 초기 설정 (refresh 없이)
     updateConfig();
 
     // 리사이즈 이벤트 (debounce 적용)
     let timeoutId: NodeJS.Timeout;
     const handleResize = () => {
       clearTimeout(timeoutId);
-      timeoutId = setTimeout(updateConfig, 150);
+      timeoutId = setTimeout(() => {
+        updateConfig();
+        // ✅ 리사이즈 시에만 ScrollTrigger refresh
+        scheduleScrollRefresh(150);
+      }, 150);
     };
 
     window.addEventListener('resize', handleResize);
     
     // 오리엔테이션 변경 대응 (모바일)
-    window.addEventListener('orientationchange', () => {
-      setTimeout(updateConfig, 200); // 오리엔테이션 전환 후 약간의 딜레이
-    });
+    const handleOrientationChange = () => {
+      setTimeout(() => {
+        updateConfig();
+        // ✅ 오리엔테이션 변경 시에만 ScrollTrigger refresh
+        scheduleScrollRefresh(200);
+      }, 200);
+    };
+    
+    window.addEventListener('orientationchange', handleOrientationChange);
 
     return () => {
       clearTimeout(timeoutId);
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', updateConfig);
+      window.removeEventListener('orientationchange', handleOrientationChange);
     };
   }, []);
 
